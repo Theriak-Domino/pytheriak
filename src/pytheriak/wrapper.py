@@ -156,14 +156,14 @@ class TherCaller():
         try:
             block_fluid, residual_output = TherCaller.output_block_finder(residual_output, start_key_fluid, end_key_fluid, True)
             fluids_stable = True
-        # ctach the ValueError, when no stable fluid phases predicted the block_fluid wont show in theriak output.
+        # catch the ValueError, when no stable fluid phases predicted the block_fluid wont show in theriak output.
         except ValueError:
             print("WARNING: No fluid phase stable at given P-T-X. Water-sat. conditions not fulfilled.")
             # set a state, to disabkle adding fluids to the rock later on. Set an empty list as placeholder instead of the fluid block.
             fluids_stable = False
             block_fluid = []
 
-        # 5) elements in system; all elements in system/phases and their idx for phase / bulk composition
+        # 5) phase compositions; elements in moles in stable phases + in total system (=bulk)
         start_key_elements = " elements in stable phases:"
         end_key_elements = " elements per formula unit:"
         block_elements, residual_output = TherCaller.output_block_finder(residual_output, start_key_elements, end_key_elements, False)
@@ -206,7 +206,7 @@ class TherCaller():
         rock.add_therin_to_reproduce(PT=self.therin_PT, bulk=self.therin_bulk)
         rock.add_bulk_rock_composition(block_bulk=blocks[0])
         rock.add_g_system(block_Gsys=blocks[1])
-        rock.add_minerals(block_volume=blocks[2], block_composition=blocks[5], element_list=element_list, output_line_overflow=output_line_overflow)
+        rock.add_minerals(block_volume=blocks[2], block_composition=blocks[5], block_elements=blocks[4], element_list=element_list, output_line_overflow=output_line_overflow)
         if fluids_stable:
             rock.add_fluids(block_fluid=blocks[3], block_composition=blocks[5], element_list=element_list, output_line_overflow=output_line_overflow)
         rock.add_deltaG(block_deltaG=blocks[6])
@@ -332,28 +332,33 @@ class Rock:
         # doing this makes the g_sys independent from the absolute input used (depends on personal format choice)
         self.g_system_per_mol_of_input = self.g_system / sum_mol_input_elements
 
-    def add_minerals(self, block_volume: list, block_composition: list, element_list: list, output_line_overflow: bool):
+    def add_minerals(self, block_volume: list, block_composition: list, block_elements: list, element_list: list, output_line_overflow: bool):
         temp_name_list = Rock.get_mineral_list(block_volume=block_volume)
 
         for temp_name in temp_name_list:
             mineral = Mineral(phase_name=temp_name)
             mineral.add_phase_properties(block_volume=block_volume, temp_name=temp_name)
-            mineral.add_composition(block_composition=block_composition,
-                                    temp_name=temp_name,
-                                    element_list=element_list,
-                                    output_line_overflow=output_line_overflow)
+            mineral.add_composition_apfu(block_composition=block_composition,
+                                         temp_name=temp_name,
+                                         output_line_overflow=output_line_overflow)
+            mineral.add_composition_moles(block_elements=block_elements,
+                                          temp_name=temp_name,
+                                          output_line_overflow=output_line_overflow)
 
             self.mineral_assemblage.append(mineral)
 
-    def add_fluids(self, block_fluid: list, block_composition: list, element_list: list, output_line_overflow: bool):
+    def add_fluids(self, block_fluid: list, block_composition: list, block_elements: list, output_line_overflow: bool):
         fluid_name_list = Rock.get_fluid_list(block_fluid=block_fluid)
 
         for fluid_name in fluid_name_list:
             fluid = Fluid(phase_name=fluid_name)
             fluid.add_phase_properties(block_fluid=block_fluid, temp_name=fluid_name)
-            fluid.add_composition(block_composition=block_composition,
-                                  temp_name=fluid_name, element_list=element_list,
-                                  output_line_overflow=output_line_overflow)
+            fluid.add_composition_apfu(block_composition=block_composition,
+                                       temp_name=fluid_name,
+                                       output_line_overflow=output_line_overflow)
+            fluid.add_composition_moles(block_elements=block_elements,
+                                        temp_name=fluid_name,
+                                        output_line_overflow=output_line_overflow)
 
             self.fluid_assemblage.append(fluid)
 
@@ -386,7 +391,7 @@ class Phase:
     def __init__(self, phase_name) -> None:
         self.name = phase_name
 
-    def add_composition(self, block_composition: list, temp_name: str, element_list: list, output_line_overflow: bool):
+    def add_composition_apfu(self, block_composition: list, temp_name: str, output_line_overflow: bool):
         """_summary_
 
         Args:
@@ -408,11 +413,26 @@ class Phase:
         phase_composition = phase_composition[1:-1]
         # convert composition to float
         phase_composition = [float(x) for x in phase_composition]
-        # create dict in the from {"element name": "apfu", ..., "O": 6.0000, "Si": 2.0000, ...}
-        # phase_composition = dict(zip(element_list, phase_composition))
 
         self.composition = phase_composition
         # important to also save Oxygen, to calculate Fe3
+
+    def add_composition_moles(self, block_elements: list, temp_name: str, output_line_overflow: bool):
+        # get list entry (str of an output line), that startswith temp_name
+        phase_composition_line = [i for i in block_elements if i.startswith(" " + temp_name)]
+        phase_composition = phase_composition_line[0].split()
+        if output_line_overflow:
+            idx = block_elements.index(phase_composition_line[0])
+            additional_line = block_elements[idx + 1]
+
+            phase_composition += additional_line.split()
+
+        # drop first (Phase name) and last ("E"-composition) entry
+        phase_composition = phase_composition[1:-1]
+        # convert composition to float
+        phase_composition = [float(x) for x in phase_composition]
+
+        self.composition_moles = phase_composition
 
 
 class Mineral(Phase):
