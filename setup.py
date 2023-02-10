@@ -15,5 +15,8 @@ setup(
     install_requires=["numpy >= 1.23", ],
     classifiers=[
         "Programming Language :: Python :: 3.10",
-        "Operating System :: OS Independent"]
+        "Operating System :: OS Independent",
+        "Development Status :: 2 - Pre-Alpha",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Topic :: Scientific/Engineering"]
 )
