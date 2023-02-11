@@ -5,11 +5,11 @@ with open("README.md", "r") as rm:
 
 setup(
     name="pytheriak",
-    version="0.0.9",
+    version="0.0.10",
     description="Wrappers to call and read_out theriak from python.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    py_modules=["pytheriak.wrapper"],
+    py_modules=["pytheriak.wrapper", "pytheriak.hdfwriter"],
     package_dir={"": "src"},
     python_requires=">=3.10",
     install_requires=["numpy >= 1.23", ],

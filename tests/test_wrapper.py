@@ -1,4 +1,4 @@
-from src.pytheriak.wrapper import Rock
+from pytheriak.wrapper import Rock
 
 block_volume = [' volumes and densities of stable phases:',
                 ' ---------------------------------------',
