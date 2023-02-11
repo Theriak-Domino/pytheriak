@@ -2,14 +2,12 @@ import h5py
 from pathlib import Path
 from datetime import date
 
-from wrapper import TherCaller, Rock, Mineral, Fluid
-
 
 class HDF5writer:
     def __init__(self, path_parent: str, filename: str) -> None:
         self.hdffile_path = Path(path_parent, filename + ".hdf5")
 
-    def write_file(self, rock_collection: list, element_list: list, init_parameters_TherCaller: TherCaller, author_name: str = "philip hartmeier"):
+    def write_file(self, rock_collection: list, element_list: list, init_parameters_TherCaller, author_name: str = "philip hartmeier"):
         with h5py.File(self.hdffile_path, "w") as hdf_file:
             hdf_file.attrs["date"] = str(date.today())
             hdf_file.attrs["author"] = author_name
@@ -19,7 +17,6 @@ class HDF5writer:
 
             hdf_file.attrs["global element idx (bulk, phases)"] = element_list
 
-            rock: Rock
             for rock in rock_collection:
                 # create a hdf_group for a Rock()-instance
                 rock_group = hdf_file.create_group(str(rock))
@@ -38,7 +35,7 @@ class HDF5writer:
 
                 # make a sub-group for mineral_assemblage of the Rock()
                 mineral_assemblage = rock_group.create_group("mineral_assemblage")
-                mineral: Mineral
+
                 for mineral in rock.mineral_assemblage:
                     mineral_group = mineral_assemblage.create_group(mineral.name)
 
@@ -53,7 +50,7 @@ class HDF5writer:
 
                 # make a sub-group for fluid_assemblage of the Rock()
                 fluid_assemblage = rock_group.create_group("fluid_assemblage")
-                fluid: Fluid
+
                 for fluid in rock.fluid_assemblage:
                     fluid_group = fluid_assemblage.create_group(fluid.name)
 
