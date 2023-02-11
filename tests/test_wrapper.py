@@ -1,3 +1,4 @@
+from pytheriak import wrapper
 from pytheriak.wrapper import Rock
 
 block_volume = [' volumes and densities of stable phases:',
@@ -103,7 +104,6 @@ def test_add_minerals():
     test_rock.add_minerals(block_volume=block_volume,
                            block_composition=block_composition,
                            block_elements=block_elements,
-                           element_list=element_list,
                            output_line_overflow=output_overflow)
 
     assert [mineral.name for mineral in test_rock.mineral_assemblage] == benchmark_mineral_names
@@ -111,5 +111,34 @@ def test_add_minerals():
     assert [mineral.composition_moles for mineral in test_rock.mineral_assemblage if mineral.name == "BI05_ann"][0] == benchmark_biotite_compositon_mol
 
 
+def test_TherCaller():
+    """To run this test a  theriak.ini (on Windows) and the correct dtabase must be place in the projects folder.
+    """
+    theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
+                                 database="ds55HP1.txt",
+                                 theriak_version="v28.05.2022",
+                                 cwd=".")
+
+    out = theriak.call_theriak(4000, 550, bulk="AL(2)SI(1)H(100)O(?)")
+    check_minimisation = theriak.check_minimisation(out)
+    rock = theriak.read_theriak(theriak_output=out, pressure=4000, temperature=550)[0]
+
+    # ## BENCHMARKS
+    bm_g_system = -20519354.34
+    bm_mineral_assemblage = ["and"]
+    bm_fluid_assemblage = ["H2O"]
+    bm_mineral_composition = [5.0, 2.0, 0.0, 1.0]
+    bm_fluid_composition = [1.0, 0.0, 2.0, 0.0]
+
+    assert rock.g_system == bm_g_system, "G_system failed"
+    assert [mineral.name for mineral in rock.mineral_assemblage] == bm_mineral_assemblage, "Mineral assemblage failed"
+    assert [mineral.composition for mineral in rock.mineral_assemblage if mineral.name == "and"][0] == bm_mineral_composition, "Mineral composition failed"
+    assert [fluid.name for fluid in rock.fluid_assemblage] == bm_fluid_assemblage, "Fluid assemblage failed"
+    assert [fluid.composition for fluid in rock.fluid_assemblage if fluid.name == "H2O"][0] == bm_fluid_composition, "Fluid composition failed"
+
+    assert check_minimisation is True, "Check_minimisation failed"
+
+
 if __name__ == "__main__":
     test_add_minerals()
+    test_TherCaller()

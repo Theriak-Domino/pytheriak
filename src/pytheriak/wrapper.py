@@ -209,7 +209,7 @@ class TherCaller():
         rock.add_minerals(block_volume=blocks[2], block_composition=blocks[5], block_elements=blocks[4],
                           output_line_overflow=output_line_overflow)
         if fluids_stable:
-            rock.add_fluids(block_fluid=blocks[3], block_composition=blocks[5], output_line_overflow=output_line_overflow)
+            rock.add_fluids(block_fluid=blocks[3], block_composition=blocks[5], block_elements=blocks[4], output_line_overflow=output_line_overflow)
         rock.add_deltaG(block_deltaG=blocks[6])
         rock.add_g_system_per_mol()
         return rock, theriak_output, blocks, element_list
