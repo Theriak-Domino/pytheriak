@@ -207,9 +207,9 @@ class TherCaller():
         rock.add_bulk_rock_composition(block_bulk=blocks[0])
         rock.add_g_system(block_Gsys=blocks[1])
         rock.add_minerals(block_volume=blocks[2], block_composition=blocks[5], block_elements=blocks[4],
-                          element_list=element_list, output_line_overflow=output_line_overflow)
+                          output_line_overflow=output_line_overflow)
         if fluids_stable:
-            rock.add_fluids(block_fluid=blocks[3], block_composition=blocks[5], element_list=element_list, output_line_overflow=output_line_overflow)
+            rock.add_fluids(block_fluid=blocks[3], block_composition=blocks[5], output_line_overflow=output_line_overflow)
         rock.add_deltaG(block_deltaG=blocks[6])
         rock.add_g_system_per_mol()
         return rock, theriak_output, blocks, element_list
@@ -333,7 +333,7 @@ class Rock:
         # doing this makes the g_sys independent from the absolute input used (depends on personal format choice)
         self.g_system_per_mol_of_input = self.g_system / sum_mol_input_elements
 
-    def add_minerals(self, block_volume: list, block_composition: list, block_elements: list, element_list: list, output_line_overflow: bool):
+    def add_minerals(self, block_volume: list, block_composition: list, block_elements: list, output_line_overflow: bool):
         temp_name_list = Rock.get_mineral_list(block_volume=block_volume)
 
         for temp_name in temp_name_list:
