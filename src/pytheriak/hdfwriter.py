@@ -17,7 +17,7 @@ class HDF5writer:
             hdf_file.attrs["theriak_version"] = init_parameters_TherCaller.theriak_version
             hdf_file.attrs["theriak_database"] = init_parameters_TherCaller.database
 
-            hdf_file.attrs["elements in compositional data (bulk, mineral), globally valid idx"] = element_list
+            hdf_file.attrs["global element idx (bulk, phases)"] = element_list
 
             rock: Rock
             for rock in rock_collection:
@@ -62,7 +62,8 @@ class HDF5writer:
                     fluid_group.attrs["volume"] = fluid.vol
                     fluid_group.attrs["density"] = fluid.density
 
-                    fluid_group.create_dataset("phase_composition", data=fluid.composition)
+                    fluid_group.create_dataset("phase_composition_apfu", data=fluid.composition)
+                    fluid_group.create_dataset("phase_composition_moles", data=fluid.composition_moles)
 
                 # save deltaG of all metastable minerals for the Rock()
                 rock_group.create_dataset("meta-stable_minerals", data=rock.mineral_delta_G)

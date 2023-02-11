@@ -206,7 +206,8 @@ class TherCaller():
         rock.add_therin_to_reproduce(PT=self.therin_PT, bulk=self.therin_bulk)
         rock.add_bulk_rock_composition(block_bulk=blocks[0])
         rock.add_g_system(block_Gsys=blocks[1])
-        rock.add_minerals(block_volume=blocks[2], block_composition=blocks[5], block_elements=blocks[4], element_list=element_list, output_line_overflow=output_line_overflow)
+        rock.add_minerals(block_volume=blocks[2], block_composition=blocks[5], block_elements=blocks[4],
+                          element_list=element_list, output_line_overflow=output_line_overflow)
         if fluids_stable:
             rock.add_fluids(block_fluid=blocks[3], block_composition=blocks[5], element_list=element_list, output_line_overflow=output_line_overflow)
         rock.add_deltaG(block_deltaG=blocks[6])
