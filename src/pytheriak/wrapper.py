@@ -133,7 +133,7 @@ class TherCaller():
 
         if substring_if_minimisation_fail in theriak_output:
             if self.verbose_mode is True:
-                print("WARNING: Detected a failed minimisation. For the following THERIN:")
+                print("WARNING: Minimisation possibly failed. For the following THERIN:")
                 print(self.therin_PT)
                 print(self.therin_bulk)
 
