@@ -61,7 +61,7 @@ class TherCaller():
             print("WARNING: Corrupted bulk, THERIN bulk (str) contains an element which is 0.")
             return False
 
-    def __init__(self, programs_dir: str, database: str, theriak_version: str, cwd: str, verbose: bool = True):
+    def __init__(self, programs_dir: str, database: str, theriak_version: str, verbose: bool = True):
         """Creates a TherCaller intance.
         For calling theriak, the theriak.ini file must be copied from the programs folder to the working directory.
 
@@ -71,7 +71,6 @@ class TherCaller():
             theriak_version (str): version of theriak, lookup in programs folder.
 
         """
-        self.cwd = Path(cwd)
 
         self.theriak_exe = Path(programs_dir) / "theriak"
         self.database = database
@@ -91,7 +90,7 @@ class TherCaller():
         self.therin_PT = "    " + str(temperature) + "    " + str(pressure)
         self.therin_bulk = "1   " + bulk + "    *"
 
-        with open(self.cwd / "THERIN", "w") as therin_file:
+        with open("THERIN", "w") as therin_file:
             therin_file.write(self.therin_PT)
             therin_file.write("\n")
             therin_file.write(self.therin_bulk)
@@ -123,9 +122,10 @@ class TherCaller():
         substring_if_minimisation_fail = "activity test"
 
         if substring_if_minimisation_fail in theriak_output:
-            print("WARNING: Detected a failed minimisation. For the following THERIN:")
-            print(self.therin_PT)
-            print(self.therin_bulk)
+            if self.verbose_mode is True:
+                print("WARNING: Detected a failed minimisation. For the following THERIN:")
+                print(self.therin_PT)
+                print(self.therin_bulk)
 
             return False
 

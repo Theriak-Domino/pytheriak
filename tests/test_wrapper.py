@@ -117,7 +117,7 @@ def test_TherCaller():
     theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
                                  database="ds55HP1.txt",
                                  theriak_version="v28.05.2022",
-                                 cwd=".", verbose=True)
+                                 verbose=True)
 
     rock, element_list = theriak.minimisation(pressure=4000, temperature=550, bulk="AL(2)SI(1)H(100)O(?)")
 
