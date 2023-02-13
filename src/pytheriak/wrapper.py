@@ -184,7 +184,14 @@ class TherCaller():
         # 8) chemical potential of components
         # ## OPTIONAL, to be discussed if necessary.
 
-        blocks = [block_bulk, block_Gsys, block_volume, block_fluid, block_elements, block_composition, block_deltaG]
+        # blocks = [block_bulk, block_Gsys, block_volume, block_fluid, block_elements, block_composition, block_deltaG]
+        blocks = {"block_bulk": block_bulk,
+                  "block_Gsys": block_Gsys,
+                  "block_volume": block_volume,
+                  "block_fluid": block_fluid,
+                  "block_elements": block_elements,
+                  "block_composition": block_composition,
+                  "block_deltaG": block_deltaG}
 
         # check for line overflow: ("elements in bulk" > 10) in "elements in stable phases:"
         # if last line in compostion block starts with an indendation, then there is line overflow in the output
@@ -207,13 +214,14 @@ class TherCaller():
         """
         rock = Rock(pressure=pressure, temperature=temperature)
         rock.add_therin_to_reproduce(PT=self.therin_PT, bulk=self.therin_bulk)
-        rock.add_bulk_rock_composition(block_bulk=blocks[0])
-        rock.add_g_system(block_Gsys=blocks[1])
-        rock.add_minerals(block_volume=blocks[2], block_composition=blocks[5], block_elements=blocks[4],
+        rock.add_bulk_rock_composition(block_bulk=blocks["block_bulk"])
+        rock.add_g_system(block_Gsys=blocks["block_Gsys"])
+        rock.add_minerals(block_volume=blocks["block_volume"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
                           output_line_overflow=output_line_overflow)
         if fluids_stable:
-            rock.add_fluids(block_fluid=blocks[3], block_composition=blocks[5], block_elements=blocks[4], output_line_overflow=output_line_overflow)
-        rock.add_deltaG(block_deltaG=blocks[6])
+            rock.add_fluids(block_fluid=blocks["block_fluid"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
+                            output_line_overflow=output_line_overflow)
+        rock.add_deltaG(block_deltaG=blocks["block_deltaG"])
         rock.add_g_system_per_mol()
         return rock, theriak_output, blocks, element_list
 
