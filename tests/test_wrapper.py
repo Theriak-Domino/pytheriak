@@ -115,13 +115,11 @@ def test_TherCaller():
     """To run this test a  theriak.ini (on Windows) and the correct dtabase must be place in the projects folder.
     """
     theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
-                                 database="ds55HP1.txt",
+                                 database="ds55HP1_ONLYtestPytheriak.txt",
                                  theriak_version="v28.05.2022",
-                                 cwd=".")
+                                 verbose=True)
 
-    out = theriak.call_theriak(4000, 550, bulk="AL(2)SI(1)H(100)O(?)")
-    check_minimisation = theriak.check_minimisation(out)
-    rock = theriak.read_theriak(theriak_output=out, pressure=4000, temperature=550)[0]
+    rock, element_list = theriak.minimisation(pressure=4000, temperature=550, bulk="AL(2)SI(1)H(100)O(?)")
 
     # ## BENCHMARKS
     bm_g_system = -20519354.34
@@ -136,9 +134,30 @@ def test_TherCaller():
     assert [fluid.name for fluid in rock.fluid_assemblage] == bm_fluid_assemblage, "Fluid assemblage failed"
     assert [fluid.composition_apfu for fluid in rock.fluid_assemblage if fluid.name == "H2O"][0] == bm_fluid_composition, "Fluid composition failed"
 
-    assert check_minimisation is True, "Check_minimisation failed"
+
+def test_TherCaller_failed_minimisation():
+    """To run this test a  theriak.ini (on Windows) and the correct dtabase must be place in the projects folder.
+    """
+    print("Two WARNINGS for failed minimisation should be printet below:")
+
+    theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
+                                 database="ds55HP1_ONLYtestPytheriak.txt",
+                                 theriak_version="v28.05.2022",
+                                 verbose=True)
+
+    fail_string = theriak.minimisation(pressure=3863, temperature=656,
+                                       bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)")
+    rock, element_list = theriak.minimisation(pressure=3863, temperature=656,
+                                              bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)",
+                                              return_failed_minimisation=True)
+
+    bm_g_system = -117647924.43
+
+    assert type(fail_string) == str, "failed minimisation not detected"
+    assert rock.g_system == bm_g_system
 
 
 if __name__ == "__main__":
     test_add_minerals()
     test_TherCaller()
+    test_TherCaller_failed_minimisation()
