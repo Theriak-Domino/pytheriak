@@ -30,7 +30,7 @@ class HDF5writer:
                 rock_group.attrs["G_system"] = float(rock.g_system)
                 rock_group.attrs["G_system_per_mol_of_input"] = float(rock.g_system_per_mol_of_input)
                 # save compositional data (bulk) as dataset, element_list acts as globally valid look-up table for idx --> element
-                rock_group.create_dataset("bulk_composition_in_mol", data=rock.bulk_composition_n)
+                rock_group.create_dataset("bulk_composition_in_mol", data=rock.bulk_composition_moles)
                 rock_group.create_dataset("bulk_composition_in_mol_percent", data=rock.bulk_composition_mol_percent)
 
                 # make a sub-group for mineral_assemblage of the Rock()
@@ -45,7 +45,7 @@ class HDF5writer:
                     mineral_group.attrs["volume_percent_of_total_solids"] = mineral.vol_percent
                     mineral_group.attrs["density"] = mineral.density
                     # save mineral composition as dataset, element_list acts as globally valid look-up table for idx --> element
-                    mineral_group.create_dataset("phase_composition_apfu", data=mineral.composition)
+                    mineral_group.create_dataset("phase_composition_apfu", data=mineral.composition_apfu)
                     mineral_group.create_dataset("phase_composition_moles", data=mineral.composition_moles)
 
                 # make a sub-group for fluid_assemblage of the Rock()
@@ -59,7 +59,7 @@ class HDF5writer:
                     fluid_group.attrs["volume"] = fluid.vol
                     fluid_group.attrs["density"] = fluid.density
 
-                    fluid_group.create_dataset("phase_composition_apfu", data=fluid.composition)
+                    fluid_group.create_dataset("phase_composition_apfu", data=fluid.composition_apfu)
                     fluid_group.create_dataset("phase_composition_moles", data=fluid.composition_moles)
 
                 # save deltaG of all metastable minerals for the Rock()

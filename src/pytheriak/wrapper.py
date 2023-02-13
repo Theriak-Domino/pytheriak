@@ -281,7 +281,7 @@ class Rock:
         self.g_system = None
         self.pressure = pressure
         self.temperature = temperature
-        self.bulk_composition_n = None
+        self.bulk_composition_moles = None
         self.bulk_composition_mol_percent = None
 
     def add_therin_to_reproduce(self, PT: str, bulk: str):
@@ -308,7 +308,7 @@ class Rock:
         # convert to str --> float
         bulk_mol_percent_list = [float(n) for n in bulk_mol_percent_list]
 
-        self.bulk_composition_n = bulk_mol_list
+        self.bulk_composition_moles = bulk_mol_list
         self.bulk_composition_mol_percent = bulk_mol_percent_list
 
     def add_g_system(self, block_Gsys: list):
@@ -327,7 +327,7 @@ class Rock:
         self.g_system = g_system
 
     def add_g_system_per_mol(self):
-        composition_list = self.bulk_composition_n
+        composition_list = self.bulk_composition_moles
         sum_mol_input_elements = np.sum(composition_list)
         # divide the g_system by the molar sum of all inputed elements;
         # doing this makes the g_sys independent from the absolute input used (depends on personal format choice)
@@ -415,7 +415,7 @@ class Phase:
         # convert composition to float
         phase_composition = [float(x) for x in phase_composition]
 
-        self.composition = phase_composition
+        self.composition_apfu = phase_composition
         # important to also save Oxygen, to calculate Fe3
 
     def add_composition_moles(self, block_elements: list, temp_name: str, output_line_overflow: bool):
