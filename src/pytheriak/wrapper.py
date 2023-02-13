@@ -61,7 +61,7 @@ class TherCaller():
             print("WARNING: Corrupted bulk, THERIN bulk (str) contains an element which is 0.")
             return False
 
-    def __init__(self, programs_dir: str, database: str, theriak_version: str, cwd: str):
+    def __init__(self, programs_dir: str, database: str, theriak_version: str, cwd: str, verbose: bool = True):
         """Creates a TherCaller intance.
         For calling theriak, the theriak.ini file must be copied from the programs folder to the working directory.
 
@@ -80,6 +80,8 @@ class TherCaller():
 
         # create theriak input for subprocess.run(), "\n" is interpreted as "enter"
         self.theriak_input = self.database + "\n" + "no\n"
+
+        self.verbose_mode = verbose
 
     def call_theriak(self, pressure: int, temperature: int, bulk: str):
         # write THERIN
@@ -103,7 +105,7 @@ class TherCaller():
 
     def check_minimisation(self, theriak_output: str):
         """Checks for theriak calls with failed minimisation.
-        If and only if a minimisation fails, this will be marked in the theriak output by "**" before the activities of Em in solutions.
+        If and only if a minimisation fails, this will be marked in the theriak output by "**" before the activities of EM in solutions.
         Additionally below the activities block the "** activity test:" is listed for the failed solution phases.
 
         This function checks for a succesful minimisation.
@@ -158,8 +160,9 @@ class TherCaller():
             fluids_stable = True
         # catch the ValueError, when no stable fluid phases predicted the block_fluid wont show in theriak output.
         except ValueError:
-            print("WARNING: No fluid phase stable at given P-T-X. Water-sat. conditions not fulfilled.")
-            # set a state, to disabkle adding fluids to the rock later on. Set an empty list as placeholder instead of the fluid block.
+            if self.verbose_mode:
+                print("WARNING: No fluid phase stable at given P-T-X. Water-sat. conditions not fulfilled.")
+            # set a state, to disable adding fluids to the rock later on. Set an empty list as placeholder instead of the fluid block.
             fluids_stable = False
             block_fluid = []
 
@@ -374,15 +377,7 @@ class Rock:
         idx_of_firstZEROS = [i.index("0.00000E+00") for i in metastable_list]
         metastable_list_names = [i[2] for i in metastable_list]
         metastable_list_deltaG = [i[idx + 1] for i, idx in zip(metastable_list, idx_of_firstZEROS)]
-        # try:
-        #     metastable_list_deltaG = [i[1].split()[0] for i in metastable_list]
-        #     print("!!!! METASTABLE LIST correct !!!")
-        #     print(metastable_list)
-        # except IndexError:
-        #     print("!!!! METASTABLE LIST FAIL !!!")
-        #     print(metastable_list)
-        #     print("!!!! block_deltaG !!!")
-        #     print(block_deltaG)
+
         metastable_list = np.array([metastable_list_names, metastable_list_deltaG])
         metastable_list = np.transpose(metastable_list).tolist()
         self.mineral_delta_G = metastable_list
