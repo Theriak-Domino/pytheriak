@@ -117,11 +117,9 @@ def test_TherCaller():
     theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
                                  database="ds55HP1.txt",
                                  theriak_version="v28.05.2022",
-                                 cwd=".")
+                                 cwd=".", verbose=True)
 
-    out = theriak.call_theriak(4000, 550, bulk="AL(2)SI(1)H(100)O(?)")
-    check_minimisation = theriak.check_minimisation(out)
-    rock = theriak.read_theriak(theriak_output=out, pressure=4000, temperature=550)[0]
+    rock, element_list = theriak.minimisation(pressure=4000, temperature=550, bulk="AL(2)SI(1)H(100)O(?)")
 
     # ## BENCHMARKS
     bm_g_system = -20519354.34
@@ -135,8 +133,6 @@ def test_TherCaller():
     assert [mineral.composition_apfu for mineral in rock.mineral_assemblage if mineral.name == "and"][0] == bm_mineral_composition, "Min. comp. failed"
     assert [fluid.name for fluid in rock.fluid_assemblage] == bm_fluid_assemblage, "Fluid assemblage failed"
     assert [fluid.composition_apfu for fluid in rock.fluid_assemblage if fluid.name == "H2O"][0] == bm_fluid_composition, "Fluid composition failed"
-
-    assert check_minimisation is True, "Check_minimisation failed"
 
 
 if __name__ == "__main__":

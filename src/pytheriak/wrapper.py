@@ -78,12 +78,15 @@ class TherCaller():
 
         self.theriak_version = theriak_version
 
-        # create theriak input for subprocess.run(), "\n" is interpreted as "enter"
-        self.theriak_input = self.database + "\n" + "no\n"
-
         self.verbose_mode = verbose
 
     def call_theriak(self, pressure: int, temperature: int, bulk: str):
+        self.pressure = pressure
+        self.temperature = temperature
+
+        # create theriak input for subprocess.run(), "\n" is interpreted as "enter"
+        self.theriak_input = self.database + "\n" + "no\n"
+
         # write THERIN
         self.therin_PT = "    " + str(temperature) + "    " + str(pressure)
         self.therin_bulk = "1   " + bulk + "    *"
@@ -129,7 +132,7 @@ class TherCaller():
         elif substring_if_minimisation_fail not in theriak_output:
             return True
 
-    def read_theriak(self, theriak_output: str, pressure: int, temperature: int):
+    def read_theriak(self, theriak_output: str):
         theriak_output = theriak_output.splitlines()
 
         """
@@ -209,21 +212,37 @@ class TherCaller():
         # drop last element "E" (only for testing in theriak)
         element_list = element_list[:-1]
 
-        """
-        Create Rock
-        """
-        rock = Rock(pressure=pressure, temperature=temperature)
-        rock.add_therin_to_reproduce(PT=self.therin_PT, bulk=self.therin_bulk)
-        rock.add_bulk_rock_composition(block_bulk=blocks["block_bulk"])
-        rock.add_g_system(block_Gsys=blocks["block_Gsys"])
-        rock.add_minerals(block_volume=blocks["block_volume"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
-                          output_line_overflow=output_line_overflow)
-        if fluids_stable:
-            rock.add_fluids(block_fluid=blocks["block_fluid"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
-                            output_line_overflow=output_line_overflow)
-        rock.add_deltaG(block_deltaG=blocks["block_deltaG"])
-        rock.add_g_system_per_mol()
-        return rock, theriak_output, blocks, element_list
+        return blocks, element_list, output_line_overflow, fluids_stable
+
+    def minimisation(self, pressure: int, temperature: int, bulk: str, return_failed_minimisation: bool = False):
+        # A compositon of call_theriak --> check_minimisation --> read_theriak; returning a rock, ele_list
+        theriak_output = TherCaller.call_theriak(self, pressure=pressure, temperature=temperature, bulk=bulk)
+        minimisation_state = TherCaller.check_minimisation(self, theriak_output=theriak_output)
+        if return_failed_minimisation:
+            # overwrite minimisation_state
+            minimisation_state = True
+
+        if minimisation_state:
+            blocks, element_list, output_line_overflow, fluids_stable = TherCaller.read_theriak(self, theriak_output=theriak_output)
+
+            # create a rock
+            rock = Rock(pressure=self.pressure, temperature=self.temperature)
+            rock.add_therin_to_reproduce(PT=self.therin_PT, bulk=self.therin_bulk)
+            rock.add_bulk_rock_composition(block_bulk=blocks["block_bulk"])
+            rock.add_g_system(block_Gsys=blocks["block_Gsys"])
+            rock.add_minerals(block_volume=blocks["block_volume"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
+                              output_line_overflow=output_line_overflow)
+            if fluids_stable:
+                rock.add_fluids(block_fluid=blocks["block_fluid"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
+                                output_line_overflow=output_line_overflow)
+            rock.add_deltaG(block_deltaG=blocks["block_deltaG"])
+            rock.add_g_system_per_mol()
+
+            return rock, element_list
+
+        else:
+            # for a failed minimisation return the raw theriak output.
+            return theriak_output
 
 
 class Rock:
