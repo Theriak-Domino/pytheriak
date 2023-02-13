@@ -107,7 +107,7 @@ def test_add_minerals():
                            output_line_overflow=output_overflow)
 
     assert [mineral.name for mineral in test_rock.mineral_assemblage] == benchmark_mineral_names
-    assert [mineral.composition for mineral in test_rock.mineral_assemblage if mineral.name == "BI05_ann"][0] == benchmark_biotite_compositon
+    assert [mineral.composition_apfu for mineral in test_rock.mineral_assemblage if mineral.name == "BI05_ann"][0] == benchmark_biotite_compositon
     assert [mineral.composition_moles for mineral in test_rock.mineral_assemblage if mineral.name == "BI05_ann"][0] == benchmark_biotite_compositon_mol
 
 
@@ -132,9 +132,9 @@ def test_TherCaller():
 
     assert rock.g_system == bm_g_system, "G_system failed"
     assert [mineral.name for mineral in rock.mineral_assemblage] == bm_mineral_assemblage, "Mineral assemblage failed"
-    assert [mineral.composition for mineral in rock.mineral_assemblage if mineral.name == "and"][0] == bm_mineral_composition, "Mineral composition failed"
+    assert [mineral.composition_apfu for mineral in rock.mineral_assemblage if mineral.name == "and"][0] == bm_mineral_composition, "Min. comp. failed"
     assert [fluid.name for fluid in rock.fluid_assemblage] == bm_fluid_assemblage, "Fluid assemblage failed"
-    assert [fluid.composition for fluid in rock.fluid_assemblage if fluid.name == "H2O"][0] == bm_fluid_composition, "Fluid composition failed"
+    assert [fluid.composition_apfu for fluid in rock.fluid_assemblage if fluid.name == "H2O"][0] == bm_fluid_composition, "Fluid composition failed"
 
     assert check_minimisation is True, "Check_minimisation failed"
 
