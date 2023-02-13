@@ -80,6 +80,16 @@ class TherCaller():
         self.verbose_mode = verbose
 
     def call_theriak(self, pressure: int, temperature: int, bulk: str):
+        """Execute theriak.exe and returns the OUT as string.
+
+        Args:
+            pressure (int): Pressure in [bar].
+            temperature (int): Temperature in [deg C]
+            bulk (str): Bulk composition in the THERIN format. Elements in capital letters (e.g. SI, AL) and moles in brackets.
+
+        Returns:
+            str: Theriak output.
+        """
         self.pressure = pressure
         self.temperature = temperature
 
