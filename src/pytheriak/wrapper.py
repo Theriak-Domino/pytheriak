@@ -224,6 +224,21 @@ class TherCaller():
 
         return blocks, element_list, output_line_overflow, fluids_stable
 
+    def create_rock(self, blocks: dict, output_line_overflow: bool, fluids_stable: bool):
+        rock = Rock(pressure=self.pressure, temperature=self.temperature)
+        rock.add_therin_to_reproduce(PT=self.therin_PT, bulk=self.therin_bulk)
+        rock.add_bulk_rock_composition(block_bulk=blocks["block_bulk"])
+        rock.add_g_system(block_Gsys=blocks["block_Gsys"])
+        rock.add_minerals(block_volume=blocks["block_volume"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
+                          output_line_overflow=output_line_overflow)
+        if fluids_stable:
+            rock.add_fluids(block_fluid=blocks["block_fluid"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
+                            output_line_overflow=output_line_overflow)
+        rock.add_deltaG(block_deltaG=blocks["block_deltaG"])
+        rock.add_g_system_per_mol()
+
+        return rock
+
     def minimisation(self, pressure: int, temperature: int, bulk: str, return_failed_minimisation: bool = False):
         # A compositon of call_theriak --> check_minimisation --> read_theriak; returning a rock, ele_list
         theriak_output = TherCaller.call_theriak(self, pressure=pressure, temperature=temperature, bulk=bulk)
@@ -234,19 +249,7 @@ class TherCaller():
 
         if minimisation_state:
             blocks, element_list, output_line_overflow, fluids_stable = TherCaller.read_theriak(self, theriak_output=theriak_output)
-
-            # create a rock
-            rock = Rock(pressure=self.pressure, temperature=self.temperature)
-            rock.add_therin_to_reproduce(PT=self.therin_PT, bulk=self.therin_bulk)
-            rock.add_bulk_rock_composition(block_bulk=blocks["block_bulk"])
-            rock.add_g_system(block_Gsys=blocks["block_Gsys"])
-            rock.add_minerals(block_volume=blocks["block_volume"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
-                              output_line_overflow=output_line_overflow)
-            if fluids_stable:
-                rock.add_fluids(block_fluid=blocks["block_fluid"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
-                                output_line_overflow=output_line_overflow)
-            rock.add_deltaG(block_deltaG=blocks["block_deltaG"])
-            rock.add_g_system_per_mol()
+            rock = TherCaller.create_rock(self, blocks=blocks, output_line_overflow=output_line_overflow, fluids_stable=fluids_stable)
 
             return rock, element_list
 
