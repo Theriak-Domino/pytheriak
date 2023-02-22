@@ -5,7 +5,7 @@ with open("README.md", "r") as rm:
 
 setup(
     name="pytheriak",
-    version="0.0.15",
+    version="0.0.16",
     description="Wrappers to call and read_out theriak from python.",
     long_description=long_description,
     long_description_content_type="text/markdown",
