@@ -111,6 +111,13 @@ def test_add_minerals():
     assert [mineral.composition_moles for mineral in test_rock.mineral_assemblage if mineral.name == "BI05_ann"][0] == benchmark_biotite_compositon_mol
 
 
+def test_add_bulk_density():
+    test_rock = Rock(pressure=6046, temperature=417)
+    test_rock.add_bulk_density(block_volume=block_volume)
+
+    assert test_rock.bulk_density == 2.842299
+
+
 def test_TherCaller():
     """To run this test a  theriak.ini (on Windows) and the correct dtabase must be place in the projects folder.
     """
@@ -159,5 +166,6 @@ def test_TherCaller_failed_minimisation():
 
 if __name__ == "__main__":
     test_add_minerals()
+    test_add_bulk_density()
     test_TherCaller()
     test_TherCaller_failed_minimisation()
