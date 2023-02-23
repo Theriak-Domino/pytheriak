@@ -344,8 +344,6 @@ class Rock:
             start_idx = [block_phase.index(line) for line in block_phase if line.startswith(start_key)][0]
 
             start_idx2 = [block_phase.index(line) for line in block_phase if phase_name in line][0]
-            print(start_idx)
-            print(start_idx2)
             assert start_idx == start_idx2, "Subblock indices for solution phase determined by two different methods do not match."
 
             end_key = "                                                                                                                                     "
@@ -455,7 +453,8 @@ class Rock:
                                           temp_name=temp_name,
                                           output_line_overflow=output_line_overflow)
 
-            mineral.add_endmember_properties()
+            if temp_name in blocks_solution_phases.keys():
+                mineral.add_endmember_properties(solution_phase_subblock=blocks_solution_phases[temp_name])
 
             self.mineral_assemblage.append(mineral)
 
@@ -538,11 +537,26 @@ class Phase:
 
         self.composition_moles = phase_composition
 
-    def add_endmember_properties(self):
-        # read the stable phases block
-        # a sub block finder method will be need, to extract lines beloning to a single solution phase
-        self.endmember_activities = None
-        self.endmember_fractions = None
+    def add_endmember_properties(self, solution_phase_subblock: list):
+        # read the solution phase subblock
+        lines = [line.split() for line in solution_phase_subblock]
+        # get rid off additional entries in the first line (pre-fix, phase, N, mol%)
+        first_line = lines[0][5:]
+        lines[0] = first_line
+
+        endmember_activities = {}
+        endmember_fractions = {}
+
+        for line in lines:
+            endmember_name = line[0]
+            activity = float(line[-1])
+            fraction = float(line[-3])
+
+            endmember_activities[endmember_name] = activity
+            endmember_fractions[endmember_name] = fraction
+
+        self.endmember_activities = endmember_activities
+        self.endmember_fractions = endmember_fractions
 
 
 class Mineral(Phase):
