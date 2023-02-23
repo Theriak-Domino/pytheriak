@@ -432,8 +432,9 @@ class Rock:
 
         self.bulk_density = bulk_density
 
-    def add_minerals(self, block_volume: list, block_composition: list, block_elements: list, output_line_overflow: bool):
+    def add_minerals(self, block_volume: list, block_phase: list, block_composition: list, block_elements: list, output_line_overflow: bool):
         temp_name_list = Rock.get_mineral_list(block_volume=block_volume)
+        blocks_solution_phases = Rock.extract_solution_subblocks(block_phase=block_phase, phase_list=temp_name_list)
 
         for temp_name in temp_name_list:
             mineral = Mineral(phase_name=temp_name)
@@ -444,6 +445,8 @@ class Rock:
             mineral.add_composition_moles(block_elements=block_elements,
                                           temp_name=temp_name,
                                           output_line_overflow=output_line_overflow)
+
+            mineral.add_endmember_properties()
 
             self.mineral_assemblage.append(mineral)
 
