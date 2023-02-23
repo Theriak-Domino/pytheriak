@@ -143,11 +143,21 @@ class TherCaller():
             return True
 
     def read_theriak(self, theriak_output: str):
+        """Reads theriak output
+        Information of interest is extracted as blocks, which then can be further processed by other methods.
+
+        Args:
+            theriak_output (str): Theriak out from TherCaller.call_theriak
+
+        Returns:
+            dict: blocks, a dict containing the extracted block of interest from the theriak output
+            list: element_list, element-idx list globally valid for all compositional data
+            bool: output_line_overflow
+            bool: fluids_stable
+        """
         theriak_output = theriak_output.splitlines()
 
-        """
-        extract blocks of interest from theriak output
-        """
+        # extract blocks of interest from theriak output
         # 1) bulk rock composition
         start_key_bulk = " composition:        N           N             mol%"
         end_key_bulk = " considered phases:"
@@ -158,14 +168,19 @@ class TherCaller():
         end_key_Gsys = "         phase                   N         mol%                                   x              x         activity       act.(x)"
         block_Gsys, residual_output = TherCaller.output_block_finder(residual_output, start_key_Gsys, end_key_Gsys, False)
 
-        # 3) volume and densities of stable phases
+        # 3) equilibrium assemblage, stable phases
+        start_key_phases = "         phase                   N         mol%                                   x              x         activity       act.(x)"
+        end_key_phases = " volumes and densities of stable phases:"
+        block_phases, residual_output = TherCaller.output_block_finder(residual_output, start_key_phases, end_key_phases, True)
+
+        # 4) volume and densities of stable phases
         start_key_volume = " volumes and densities of stable phases:"
         # choose end_key_volume, so that always present independent if fluids are stable or not (this will affect the text of the theriak output)
         end_key_volume = " compositions of stable phases [ mol% ]:"
         # don't pass the residual output here, because the fluid block comes before end_key_volume in the theriak output
         block_volume, residual_output_NOT_TO_USE = TherCaller.output_block_finder(residual_output, start_key_volume, end_key_volume, True)
 
-        # 4) gases and fluids
+        # 5) gases and fluids
         start_key_fluid = "  gases and fluids       N       volume/mol  volume[ccm]               wt/mol       wt [g]              density [g/ccm]"
         end_key_fluid = " H2O content of stable phases:"
         try:
@@ -179,27 +194,27 @@ class TherCaller():
             fluids_stable = False
             block_fluid = []
 
-        # 5) phase compositions; elements in moles in stable phases + in total system (=bulk)
+        # 6) phase compositions; elements in moles in stable phases + in total system (=bulk)
         start_key_elements = " elements in stable phases:"
         end_key_elements = " elements per formula unit:"
         block_elements, residual_output = TherCaller.output_block_finder(residual_output, start_key_elements, end_key_elements, False)
 
-        # 6) phase composition: elements per formula unit
+        # 7) phase composition: elements per formula unit
         start_key_composition = " elements per formula unit:"
         end_key_composition = " activities of all phases:"
         block_composition, residual_output = TherCaller.output_block_finder(residual_output, start_key_composition, end_key_composition, True)
 
-        # 7) activities of all phases: delta_G above stable plain
+        # 8) activities of all phases: delta_G above stable plain
         start_key_deltaG = " activities of all phases:"
         end_key_deltaG = " chemical potentials of components:"
         block_deltaG, residual_output = TherCaller.output_block_finder(residual_output, start_key_deltaG, end_key_deltaG, True)
 
-        # 8) chemical potential of components
-        # ## OPTIONAL, to be discussed if necessary.
+        # 9) chemical potential of components
+        # ## future addition.
 
-        # blocks = [block_bulk, block_Gsys, block_volume, block_fluid, block_elements, block_composition, block_deltaG]
         blocks = {"block_bulk": block_bulk,
                   "block_Gsys": block_Gsys,
+                  "block_phases": block_phases,
                   "block_volume": block_volume,
                   "block_fluid": block_fluid,
                   "block_elements": block_elements,
@@ -308,6 +323,32 @@ class Rock:
         fluid_name_list = [temp_name.split()[0] for temp_name in block_fluid[start_idx:]]
         # for fluids temp name is kept.
         return fluid_name_list
+
+    @staticmethod
+    def extract_solution_subblocks(block_phase: list, phase_list: list):
+        block_solution_phases = {}
+        # filter phase_list for solution phases, marked by "_" in the name
+        phase_list = [phase for phase in phase_list if "_" in phase]
+
+        for phase_name in phase_list:
+            start_key = "   0"
+            start_idx = [block_phase.index(line) for line in block_phase if line.startswith(start_key)][0]
+
+            start_idx2 = [block_phase.index(line) for line in block_phase if phase_name in line][0]
+            print(start_idx)
+            print(start_idx2)
+            assert start_idx == start_idx2, "Subblock indices for solution phase determined by two different methods do not match."
+
+            end_key = "                                                                                                                                     "
+            end_idx = block_phase.index(end_key)
+
+            solution_subblock = block_phase[start_idx:end_idx]
+            block_solution_phases[phase_name] = solution_subblock
+
+            # trim block_phase by the extracted lines
+            block_phase = block_phase[end_idx+1:]
+
+        return block_solution_phases
 
     def __init__(self, pressure: int, temperature: int):
         """Creates a Rock() instance.
