@@ -485,6 +485,12 @@ class Phase:
 
         self.composition_moles = phase_composition
 
+    def add_endmember_properties(self):
+        # read the stable phases block
+        # a sub block finder method will be need, to extract lines beloning to a single solution phase
+        self.endmember_activities = None
+        self.endmember_fractions = None
+
 
 class Mineral(Phase):
     def add_phase_properties(self, block_volume: list, temp_name: str):
