@@ -326,6 +326,15 @@ class Rock:
 
     @staticmethod
     def extract_solution_subblocks(block_phase: list, phase_list: list):
+        """Used in Rock.add_minerals()
+
+        Args:
+            block_phase (list): block_phase from blocks (splitted theriak output)
+            phase_list (list): list of phase names from get_mineral_list() or get_fluid_list()
+
+        Returns:
+            dict: Dict with phase name (only solution phases) as keys, and output-lines of that corresponding phase in subblocks (list)
+        """
         block_solution_phases = {}
         # filter phase_list for solution phases, marked by "_" in the name
         phase_list = [phase for phase in phase_list if "_" in phase]
