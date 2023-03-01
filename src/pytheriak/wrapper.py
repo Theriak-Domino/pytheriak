@@ -246,7 +246,7 @@ class TherCaller():
         rock.add_g_system(block_Gsys=blocks["block_Gsys"])
         rock.add_bulk_density(block_volume=blocks["block_volume"])
         rock.add_minerals(block_volume=blocks["block_volume"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
-                          output_line_overflow=output_line_overflow)
+                          output_line_overflow=output_line_overflow, verbose=self.verbose_mode)
         if fluids_stable:
             rock.add_fluids(block_fluid=blocks["block_fluid"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
                             output_line_overflow=output_line_overflow)
@@ -325,35 +325,41 @@ class Rock:
         return fluid_name_list
 
     @staticmethod
-    def extract_solution_subblocks(block_phase: list, phase_list: list):
+    def extract_solution_subblocks(block_phase: list, phase_list: list, verbose: bool = True):
         """Used in Rock.add_minerals()
 
         Args:
             block_phase (list): block_phase from blocks (splitted theriak output)
             phase_list (list): list of phase names from get_mineral_list() or get_fluid_list()
+            verbose (bool): turn on/off verbose mode, if False no Warnings will be printed for pure phases with underscore in the name.
 
         Returns:
             dict: Dict with phase name (only solution phases) as keys, and output-lines of that corresponding phase in subblocks (list)
         """
         block_solution_phases = {}
+        solution_phase_list = []
         # filter phase_list for solution phases, marked by "_" in the name
-        phase_list = [phase for phase in phase_list if "_" in phase]
+        phase_list_underscore = [phase for phase in phase_list if "_" in phase]
 
-        for phase_name in phase_list:
-            start_key = "   0"
-            start_idx = [block_phase.index(line) for line in block_phase if line.startswith(start_key)][0]
+        # solution phases are marked bijectively by "  0" followed by the solution number in this block
+        start_key = "   0"
+        start_indices = [idx for idx, line in enumerate(block_phase) if line.startswith(start_key)]
+        end_key = "                                                                                                                                     "
+        end_indices = [idx for idx, line in enumerate(block_phase) if line == end_key]
 
-            start_idx2 = [block_phase.index(line) for line in block_phase if phase_name in line][0]
-            assert start_idx == start_idx2, "Subblock indices for solution phase determined by two different methods do not match."
-
-            end_key = "                                                                                                                                     "
-            end_idx = block_phase.index(end_key)
-
+        for start_idx, end_idx in zip(start_indices, end_indices):
             solution_subblock = block_phase[start_idx:end_idx]
-            block_solution_phases[phase_name] = solution_subblock
+            print(solution_subblock)
+            # extract solution name from first line / 3rd entry of the solution subblock
+            solution_name = solution_subblock[0].split()[2]
+            solution_phase_list.append(solution_name)
+            block_solution_phases[solution_name] = solution_subblock
 
-            # trim block_phase by the extracted lines
-            block_phase = block_phase[end_idx+1:]
+        # if start_idx do not coincide with start_idx2 (determined by "_" in phase name) this phase is not treated as solution.
+        excluded_phases = [phase_name for phase_name in phase_list_underscore if phase_name not in solution_phase_list]
+        if verbose:
+            if len(excluded_phases) != 0:
+                print("WARNING: No solution subblock was extracted for {}. Check if phase name contains an underscore.".format(excluded_phases))
 
         return block_solution_phases
 
@@ -439,9 +445,10 @@ class Rock:
 
         self.bulk_density = bulk_density
 
-    def add_minerals(self, block_volume: list, block_phase: list, block_composition: list, block_elements: list, output_line_overflow: bool):
+    def add_minerals(self, block_volume: list, block_phase: list, block_composition: list,
+                     block_elements: list, output_line_overflow: bool, verbose: bool = True):
         temp_name_list = Rock.get_mineral_list(block_volume=block_volume)
-        blocks_solution_phases = Rock.extract_solution_subblocks(block_phase=block_phase, phase_list=temp_name_list)
+        blocks_solution_phases = Rock.extract_solution_subblocks(block_phase=block_phase, phase_list=temp_name_list, verbose=verbose)
 
         for temp_name in temp_name_list:
             mineral = Mineral(phase_name=temp_name)
