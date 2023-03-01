@@ -102,6 +102,7 @@ benchmark_biotite_compositon_mol = [4.418892, 0.387275, 0.0, 0.709575, 0.736482,
 def test_add_minerals():
     test_rock = Rock(pressure=6046, temperature=417)
     test_rock.add_minerals(block_volume=block_volume,
+                           block_phases=["a place holder empty list"],
                            block_composition=block_composition,
                            block_elements=block_elements,
                            output_line_overflow=output_overflow)

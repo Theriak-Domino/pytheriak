@@ -245,8 +245,8 @@ class TherCaller():
         rock.add_bulk_rock_composition(block_bulk=blocks["block_bulk"])
         rock.add_g_system(block_Gsys=blocks["block_Gsys"])
         rock.add_bulk_density(block_volume=blocks["block_volume"])
-        rock.add_minerals(block_volume=blocks["block_volume"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
-                          output_line_overflow=output_line_overflow, verbose=self.verbose_mode)
+        rock.add_minerals(block_volume=blocks["block_volume"], block_phases=blocks["block_phases"], block_composition=blocks["block_composition"],
+                          block_elements=blocks["block_elements"], output_line_overflow=output_line_overflow, verbose=self.verbose_mode)
         if fluids_stable:
             rock.add_fluids(block_fluid=blocks["block_fluid"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
                             output_line_overflow=output_line_overflow)
@@ -325,11 +325,11 @@ class Rock:
         return fluid_name_list
 
     @staticmethod
-    def extract_solution_subblocks(block_phase: list, phase_list: list, verbose: bool = True):
+    def extract_solution_subblocks(block_phases: list, phase_list: list, verbose: bool = True):
         """Used in Rock.add_minerals()
 
         Args:
-            block_phase (list): block_phase from blocks (splitted theriak output)
+            block_phases (list): block_phases from blocks (splitted theriak output)
             phase_list (list): list of phase names from get_mineral_list() or get_fluid_list()
             verbose (bool): turn on/off verbose mode, if False no Warnings will be printed for pure phases with underscore in the name.
 
@@ -343,13 +343,21 @@ class Rock:
 
         # solution phases are marked bijectively by "  0" followed by the solution number in this block
         start_key = "   0"
-        start_indices = [idx for idx, line in enumerate(block_phase) if line.startswith(start_key)]
+        start_indices = [idx for idx, line in enumerate(block_phases) if line.startswith(start_key)]
         end_key = "                                                                                                                                     "
-        end_indices = [idx for idx, line in enumerate(block_phase) if line == end_key]
+        end_indices = [idx for idx, line in enumerate(block_phases) if line == end_key]
 
         for start_idx, end_idx in zip(start_indices, end_indices):
-            solution_subblock = block_phase[start_idx:end_idx]
-            print(solution_subblock)
+            solution_subblock = block_phases[start_idx:end_idx]
+
+            # if minimisation failed, subblock layout changes!
+            # check for "activity test", if present remove additional lines.
+            if any("activity test:" in line for line in solution_subblock):
+                cut_idx = solution_subblock.index(" ")
+                solution_subblock = solution_subblock[:cut_idx]
+                if verbose:
+                    print("WARNING: Minimisation might have failed. Returned activty XXX")
+
             # extract solution name from first line / 3rd entry of the solution subblock
             solution_name = solution_subblock[0].split()[2]
             solution_phase_list.append(solution_name)
@@ -445,10 +453,10 @@ class Rock:
 
         self.bulk_density = bulk_density
 
-    def add_minerals(self, block_volume: list, block_phase: list, block_composition: list,
+    def add_minerals(self, block_volume: list, block_phases: list, block_composition: list,
                      block_elements: list, output_line_overflow: bool, verbose: bool = True):
         temp_name_list = Rock.get_mineral_list(block_volume=block_volume)
-        blocks_solution_phases = Rock.extract_solution_subblocks(block_phase=block_phase, phase_list=temp_name_list, verbose=verbose)
+        blocks_solution_phases = Rock.extract_solution_subblocks(block_phases=block_phases, phase_list=temp_name_list, verbose=verbose)
 
         for temp_name in temp_name_list:
             mineral = Mineral(phase_name=temp_name)
