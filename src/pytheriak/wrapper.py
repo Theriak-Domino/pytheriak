@@ -41,6 +41,44 @@ class TherCaller():
         return block, residual_output
 
     @staticmethod
+    def extract_solution_subblocks(block_phases: list, verbose: bool = True):
+        """Used in Rock.add_minerals()
+
+        Args:
+            block_phases (list): block_phases from blocks (splitted theriak output)
+            verbose (bool): turn on/off verbose mode, if False no Warnings will be printed for pure phases with underscore in the name.
+
+        Returns:
+            dict: Dict with phase name (only solution phases) as keys, and output-lines of that corresponding phase in subblocks (list)
+        """
+        block_solution_phases = {}
+        solution_phase_list = []
+
+        # solution phases are marked bijectively by "  0" followed by the solution number in this block
+        start_key = "   0"
+        start_indices = [idx for idx, line in enumerate(block_phases) if line.startswith(start_key)]
+        end_key = "                                                                                                                                     "
+        end_indices = [idx for idx, line in enumerate(block_phases) if line == end_key]
+
+        for start_idx, end_idx in zip(start_indices, end_indices):
+            solution_subblock = block_phases[start_idx:end_idx]
+
+            # if minimisation failed, subblock layout changes!
+            # check for "activity test", if present remove additional lines.
+            if any("activity test:" in line for line in solution_subblock):
+                cut_idx = solution_subblock.index(" ")
+                solution_subblock = solution_subblock[:cut_idx]
+                if verbose:
+                    print("WARNING: Minimisation might have failed. End-member activities of solutions might be wrong.")
+
+            # extract solution name from first line / 3rd entry of the solution subblock
+            solution_name = solution_subblock[0].split()[2]
+            solution_phase_list.append(solution_name)
+            block_solution_phases[solution_name] = solution_subblock
+
+        return block_solution_phases
+
+    @staticmethod
     def check_for_corrupted_bulk(bulk: str):
         """Checks if bulk has an non-zero amount of all elemetns in the system.
         If this is not the case, theriak will remove the element from the bulk. Resulting in an unwanted reduction of the systems components.
@@ -212,9 +250,13 @@ class TherCaller():
         # 9) chemical potential of components
         # ## future addition.
 
+        # 10) extract subblocks from block_phases for end-member properties of solution phases
+        solution_subblocks = TherCaller.extract_solution_subblocks(block_phases=block_phases, verbose=self.verbose_mode)
+
         blocks = {"block_bulk": block_bulk,
                   "block_Gsys": block_Gsys,
                   "block_phases": block_phases,
+                  "block_solutions": solution_subblocks,
                   "block_volume": block_volume,
                   "block_fluid": block_fluid,
                   "block_elements": block_elements,
@@ -245,7 +287,7 @@ class TherCaller():
         rock.add_bulk_rock_composition(block_bulk=blocks["block_bulk"])
         rock.add_g_system(block_Gsys=blocks["block_Gsys"])
         rock.add_bulk_density(block_volume=blocks["block_volume"])
-        rock.add_minerals(block_volume=blocks["block_volume"], block_phases=blocks["block_phases"], block_composition=blocks["block_composition"],
+        rock.add_minerals(block_volume=blocks["block_volume"], block_solutions=blocks["block_solutions"], block_composition=blocks["block_composition"],
                           block_elements=blocks["block_elements"], output_line_overflow=output_line_overflow, verbose=self.verbose_mode)
         if fluids_stable:
             rock.add_fluids(block_fluid=blocks["block_fluid"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
@@ -323,53 +365,6 @@ class Rock:
         fluid_name_list = [temp_name.split()[0] for temp_name in block_fluid[start_idx:]]
         # for fluids temp name is kept.
         return fluid_name_list
-
-    @staticmethod
-    def extract_solution_subblocks(block_phases: list, phase_list: list, verbose: bool = True):
-        """Used in Rock.add_minerals()
-
-        Args:
-            block_phases (list): block_phases from blocks (splitted theriak output)
-            phase_list (list): list of phase names from get_mineral_list() or get_fluid_list()
-            verbose (bool): turn on/off verbose mode, if False no Warnings will be printed for pure phases with underscore in the name.
-
-        Returns:
-            dict: Dict with phase name (only solution phases) as keys, and output-lines of that corresponding phase in subblocks (list)
-        """
-        block_solution_phases = {}
-        solution_phase_list = []
-        # filter phase_list for solution phases, marked by "_" in the name
-        phase_list_underscore = [phase for phase in phase_list if "_" in phase]
-
-        # solution phases are marked bijectively by "  0" followed by the solution number in this block
-        start_key = "   0"
-        start_indices = [idx for idx, line in enumerate(block_phases) if line.startswith(start_key)]
-        end_key = "                                                                                                                                     "
-        end_indices = [idx for idx, line in enumerate(block_phases) if line == end_key]
-
-        for start_idx, end_idx in zip(start_indices, end_indices):
-            solution_subblock = block_phases[start_idx:end_idx]
-
-            # if minimisation failed, subblock layout changes!
-            # check for "activity test", if present remove additional lines.
-            if any("activity test:" in line for line in solution_subblock):
-                cut_idx = solution_subblock.index(" ")
-                solution_subblock = solution_subblock[:cut_idx]
-                if verbose:
-                    print("WARNING: Minimisation might have failed. Returned activty XXX")
-
-            # extract solution name from first line / 3rd entry of the solution subblock
-            solution_name = solution_subblock[0].split()[2]
-            solution_phase_list.append(solution_name)
-            block_solution_phases[solution_name] = solution_subblock
-
-        # if start_idx do not coincide with start_idx2 (determined by "_" in phase name) this phase is not treated as solution.
-        excluded_phases = [phase_name for phase_name in phase_list_underscore if phase_name not in solution_phase_list]
-        if verbose:
-            if len(excluded_phases) != 0:
-                print("WARNING: No solution subblock was extracted for {}. Check if phase name contains an underscore.".format(excluded_phases))
-
-        return block_solution_phases
 
     def __init__(self, pressure: int, temperature: int):
         """Creates a Rock() instance.
@@ -453,10 +448,9 @@ class Rock:
 
         self.bulk_density = bulk_density
 
-    def add_minerals(self, block_volume: list, block_phases: list, block_composition: list,
+    def add_minerals(self, block_volume: list, block_solutions: list, block_composition: list,
                      block_elements: list, output_line_overflow: bool, verbose: bool = True):
         temp_name_list = Rock.get_mineral_list(block_volume=block_volume)
-        blocks_solution_phases = Rock.extract_solution_subblocks(block_phases=block_phases, phase_list=temp_name_list, verbose=verbose)
 
         for temp_name in temp_name_list:
             mineral = Mineral(phase_name=temp_name)
@@ -468,8 +462,8 @@ class Rock:
                                           temp_name=temp_name,
                                           output_line_overflow=output_line_overflow)
 
-            if temp_name in blocks_solution_phases.keys():
-                mineral.add_endmember_properties(solution_phase_subblock=blocks_solution_phases[temp_name])
+            if temp_name in block_solutions.keys():
+                mineral.add_endmember_properties(solution_phase_subblock=block_solutions[temp_name])
 
             self.mineral_assemblage.append(mineral)
 
