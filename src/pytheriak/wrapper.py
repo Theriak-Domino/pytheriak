@@ -57,11 +57,18 @@ class TherCaller():
         # solution phases are marked bijectively by "  0" followed by the solution number in this block
         start_key = "   0"
         start_indices = [idx for idx, line in enumerate(block_phases) if line.startswith(start_key)]
-        end_key = "                                                                                                                                     "
+        end_key = " "
         end_indices = [idx for idx, line in enumerate(block_phases) if line == end_key]
+        # only keep end_inidces with a corresponding start index.
+        # solution phases are always listed first
+        end_indices[:len(start_indices)]
 
         for start_idx, end_idx in zip(start_indices, end_indices):
             solution_subblock = block_phases[start_idx:end_idx]
+            # filter out lines containing info about site occupancy or element fractions (e.g. XMg, Al(pfu))
+            # the lines containing end-member fractions and activities are the only ones ending with a double-space "  "
+            # this is represented with the regex pattern: "Any digit""Space""Space""End of string" = "\d\s\s$"
+            solution_subblock = [line for line in solution_subblock if len(re.findall(pattern=r"\d\s\s$", string=line)) == 1]
 
             # if minimisation failed, subblock layout changes!
             # check for "activity test", if present remove additional lines.
