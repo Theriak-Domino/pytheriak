@@ -112,6 +112,22 @@ def test_add_minerals():
     assert [mineral.composition_moles for mineral in test_rock.mineral_assemblage if mineral.name == "BI05_ann"][0] == benchmark_biotite_compositon_mol
 
 
+def test_add_endmember_properties():
+    theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
+                                 database="ds55HP1_ONLYtestPytheriak.txt",
+                                 theriak_version="v28.05.2022",
+                                 verbose=True)
+
+    rock, element_list = theriak.minimisation(pressure=5000, temperature=450,
+                                              bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)", )
+
+    biotite_activities = [mineral.endmember_activities for mineral in rock.mineral_assemblage if mineral.name == "BI05_ann"][0]
+    print(biotite_activities["phl"])
+    print(biotite_activities["ann"])
+    assert biotite_activities["phl"] == 0.0135931, "Phlogopite act in biotite does not match."
+    assert biotite_activities["ann"] == 0.290153, "Annite act in biotite does not match."
+
+
 def test_add_bulk_density():
     test_rock = Rock(pressure=6046, temperature=417)
     test_rock.add_bulk_density(block_volume=block_volume)
@@ -120,7 +136,7 @@ def test_add_bulk_density():
 
 
 def test_TherCaller():
-    """To run this test a  theriak.ini (on Windows) and the correct dtabase must be place in the projects folder.
+    """To run this test a  theriak.ini (on Windows) and the correct database must be place in the projects folder.
     """
     theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
                                  database="ds55HP1_ONLYtestPytheriak.txt",
@@ -167,6 +183,7 @@ def test_TherCaller_failed_minimisation():
 
 if __name__ == "__main__":
     test_add_minerals()
+    test_add_endmember_properties()
     test_add_bulk_density()
     test_TherCaller()
     test_TherCaller_failed_minimisation()

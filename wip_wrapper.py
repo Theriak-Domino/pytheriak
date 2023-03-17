@@ -12,6 +12,11 @@ blocks = theriak.read_theriak(out)[0]
 blocks["block_phases"]
 # %%
 mineral_list = wrapper.Rock.get_mineral_list(blocks["block_volume"])
-solution_phase_subblocks = wrapper.Rock.extract_solution_subblocks(blocks["block_phases"], mineral_list)
+solution_phase_subblocks = wrapper.TherCaller.extract_solution_subblocks(blocks["block_phases"], mineral_list)
 # %%
-wrapper.Mineral('BI05_ann').add_endmember_properties(solution_phase_subblock=solution_phase_subblocks["BI05_ann"])
+biotite_sol = wrapper.Mineral('BI05_ann')
+biotite_sol.add_endmember_properties(solution_phase_subblock=solution_phase_subblocks["BI05_ann"])
+
+# %%
+biotite_sol.endmember_activities
+# %%
