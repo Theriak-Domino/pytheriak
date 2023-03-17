@@ -292,8 +292,8 @@ class TherCaller():
         rock.add_minerals(block_volume=blocks["block_volume"], block_solutions=blocks["block_solutions"], block_composition=blocks["block_composition"],
                           block_elements=blocks["block_elements"], output_line_overflow=output_line_overflow, verbose=self.verbose_mode)
         if fluids_stable:
-            rock.add_fluids(block_fluid=blocks["block_fluid"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
-                            output_line_overflow=output_line_overflow)
+            rock.add_fluids(block_fluid=blocks["block_fluid"], block_solutions=blocks["block_solutions"], block_composition=blocks["block_composition"],
+                            block_elements=blocks["block_elements"], output_line_overflow=output_line_overflow)
         rock.add_deltaG(block_deltaG=blocks["block_deltaG"])
         rock.add_g_system_per_mol()
 
@@ -469,7 +469,8 @@ class Rock:
 
             self.mineral_assemblage.append(mineral)
 
-    def add_fluids(self, block_fluid: list, block_composition: list, block_elements: list, output_line_overflow: bool):
+    def add_fluids(self, block_fluid: list, block_solutions: list, block_composition: list,
+                   block_elements: list, output_line_overflow: bool):
         fluid_name_list = Rock.get_fluid_list(block_fluid=block_fluid)
 
         for fluid_name in fluid_name_list:
@@ -481,6 +482,9 @@ class Rock:
             fluid.add_composition_moles(block_elements=block_elements,
                                         temp_name=fluid_name,
                                         output_line_overflow=output_line_overflow)
+
+            if fluid_name in block_solutions.keys():
+                fluid.add_endmember_properties(solution_phase_subblock=block_solutions[fluid_name])
 
             self.fluid_assemblage.append(fluid)
 
