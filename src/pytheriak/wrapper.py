@@ -68,6 +68,8 @@ class TherCaller():
             if any("activity test:" in line for line in solution_subblock):
                 cut_idx = solution_subblock.index(" ")
                 solution_subblock = solution_subblock[:cut_idx]
+                # replace the "**" marks with "  ", so that the solution subblock can be treated like one of a succesful minimisation afterwards.
+                solution_subblock = [string.replace("**", "  ") for string in solution_subblock]
                 if verbose:
                     print("WARNING: Minimisation might have failed. End-member activities of solutions might be wrong.")
 
