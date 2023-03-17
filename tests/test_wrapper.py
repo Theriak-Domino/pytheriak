@@ -138,6 +138,18 @@ def test_add_endmember_properties():
     assert chlorite_activities["daph"] == 1.00000, "Failed minimisation case: Daphnite act in biotite does not match."
     assert chlorite_activities["ames"] == 0.0552862, "Failed minimisation case: Amesite act in biotite does not match."
 
+    # check for fluid solutions
+    theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
+                                 database="JUN92d_ONLYtestPytheriak.bs",
+                                 theriak_version="v28.05.2022",
+                                 verbose=True)
+
+    rock, element_list = theriak.minimisation(pressure=5000, temperature=450,
+                                              bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)C(25)O(?)")
+
+    fluid_activities = [fluid.endmember_activities for fluid in rock.fluid_assemblage if fluid.name == "H2O-CO2_H2O"][0]
+    assert fluid_activities["STEAM"] == 0.575980
+
 
 def test_add_bulk_density():
     test_rock = Rock(pressure=6046, temperature=417)
