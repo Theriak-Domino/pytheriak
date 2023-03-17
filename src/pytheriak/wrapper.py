@@ -46,7 +46,7 @@ class TherCaller():
 
         Args:
             block_phases (list): block_phases from blocks (splitted theriak output)
-            verbose (bool): turn on/off verbose mode, if False no Warnings will be printed for pure phases with underscore in the name.
+            verbose (bool): turn on/off verbose mode, if False no Warnings will be printed, if activities do not match.
 
         Returns:
             dict: Dict with phase name (only solution phases) as keys, and output-lines of that corresponding phase in subblocks (list)
