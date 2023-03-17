@@ -119,13 +119,24 @@ def test_add_endmember_properties():
                                  verbose=True)
 
     rock, element_list = theriak.minimisation(pressure=5000, temperature=450,
-                                              bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)", )
+                                              bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)")
 
     biotite_activities = [mineral.endmember_activities for mineral in rock.mineral_assemblage if mineral.name == "BI05_ann"][0]
     print(biotite_activities["phl"])
     print(biotite_activities["ann"])
     assert biotite_activities["phl"] == 0.0135931, "Phlogopite act in biotite does not match."
     assert biotite_activities["ann"] == 0.290152, "Annite act in biotite does not match."
+
+    # check also for a failing minimisation
+    rock, element_list = theriak.minimisation(pressure=5000, temperature=450,
+                                              bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)",
+                                              return_failed_minimisation=True)
+
+    chlorite_activities = [mineral.endmember_activities for mineral in rock.mineral_assemblage if mineral.name == "CHL_daph"][0]
+    print(chlorite_activities["daph"])
+    print(chlorite_activities["ames"])
+    assert chlorite_activities["daph"] == 1.00000, "Failed minimisation case: Daphnite act in biotite does not match."
+    assert chlorite_activities["ames"] == 0.0552862, "Failed minimisation case: Amesite act in biotite does not match."
 
 
 def test_add_bulk_density():
@@ -169,8 +180,8 @@ def test_TherCaller_failed_minimisation():
                                  theriak_version="v28.05.2022",
                                  verbose=True)
 
-    fail_string = theriak.minimisation(pressure=3863, temperature=656,
-                                       bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)")
+    fail_string, element_list_placeholder = theriak.minimisation(pressure=3863, temperature=656,
+                                                                 bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)")
     rock, element_list = theriak.minimisation(pressure=3863, temperature=656,
                                               bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)",
                                               return_failed_minimisation=True)

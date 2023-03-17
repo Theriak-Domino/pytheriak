@@ -314,8 +314,8 @@ class TherCaller():
             return rock, element_list
 
         else:
-            # for a failed minimisation return the raw theriak output.
-            return theriak_output
+            # for a failed minimisation return the raw theriak output. And an empty list instead of the element_list
+            return theriak_output, []
 
 
 class Rock:
