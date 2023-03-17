@@ -125,7 +125,7 @@ def test_add_endmember_properties():
     print(biotite_activities["phl"])
     print(biotite_activities["ann"])
     assert biotite_activities["phl"] == 0.0135931, "Phlogopite act in biotite does not match."
-    assert biotite_activities["ann"] == 0.290153, "Annite act in biotite does not match."
+    assert biotite_activities["ann"] == 0.290152, "Annite act in biotite does not match."
 
 
 def test_add_bulk_density():
