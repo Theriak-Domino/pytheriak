@@ -41,6 +41,52 @@ class TherCaller():
         return block, residual_output
 
     @staticmethod
+    def extract_solution_subblocks(block_phases: list, verbose: bool = True):
+        """Used in Rock.add_minerals()
+
+        Args:
+            block_phases (list): block_phases from blocks (splitted theriak output)
+            verbose (bool): turn on/off verbose mode, if False no Warnings will be printed, if activities do not match.
+
+        Returns:
+            dict: Dict with phase name (only solution phases) as keys, and output-lines of that corresponding phase in subblocks (list)
+        """
+        block_solution_phases = {}
+        solution_phase_list = []
+
+        # solution phases are marked bijectively by "  0" followed by the solution number in this block
+        start_key = "   0"
+        start_indices = [idx for idx, line in enumerate(block_phases) if line.startswith(start_key)]
+        # shift start_idx and append last line as last end_idx
+        end_indices = start_indices[1:]
+        end_indices.append(len(block_phases))
+
+        for start_idx, end_idx in zip(start_indices, end_indices):
+            solution_subblock = block_phases[start_idx:end_idx]
+
+            # if minimisation failed, subblock layout changes!
+            # check for "activity test", if present remove additional lines.
+            if any("activity test:" in line for line in solution_subblock):
+                cut_idx = solution_subblock.index(" ")
+                solution_subblock = solution_subblock[:cut_idx]
+                # replace the "**" marks with "  ", so that the solution subblock can be treated like one of a succesful minimisation afterwards.
+                solution_subblock = [string.replace("**", "  ") for string in solution_subblock]
+                if verbose:
+                    print("WARNING: Minimisation might have failed. End-member activities of solutions might be wrong.")
+
+            # filter out lines containing info about site occupancy or element fractions (e.g. XMg, Al(pfu))
+            # the lines containing end-member fractions and activities are the only ones ending with a double-space "  "
+            # this is represented with the regex pattern: "Any digit""Space""Space""End of string" = "\d\s\s$"
+            solution_subblock = [line for line in solution_subblock if len(re.findall(pattern=r"\d\s\s$", string=line)) == 1]
+
+            # extract solution name from first line / 3rd entry of the solution subblock
+            solution_name = solution_subblock[0].split()[2]
+            solution_phase_list.append(solution_name)
+            block_solution_phases[solution_name] = solution_subblock
+
+        return block_solution_phases
+
+    @staticmethod
     def check_for_corrupted_bulk(bulk: str):
         """Checks if bulk has an non-zero amount of all elemetns in the system.
         If this is not the case, theriak will remove the element from the bulk. Resulting in an unwanted reduction of the systems components.
@@ -143,11 +189,21 @@ class TherCaller():
             return True
 
     def read_theriak(self, theriak_output: str):
+        """Reads theriak output
+        Information of interest is extracted as blocks, which then can be further processed by other methods.
+
+        Args:
+            theriak_output (str): Theriak out from TherCaller.call_theriak
+
+        Returns:
+            dict: blocks, a dict containing the extracted block of interest from the theriak output
+            list: element_list, element-idx list globally valid for all compositional data
+            bool: output_line_overflow
+            bool: fluids_stable
+        """
         theriak_output = theriak_output.splitlines()
 
-        """
-        extract blocks of interest from theriak output
-        """
+        # extract blocks of interest from theriak output
         # 1) bulk rock composition
         start_key_bulk = " composition:        N           N             mol%"
         end_key_bulk = " considered phases:"
@@ -158,14 +214,19 @@ class TherCaller():
         end_key_Gsys = "         phase                   N         mol%                                   x              x         activity       act.(x)"
         block_Gsys, residual_output = TherCaller.output_block_finder(residual_output, start_key_Gsys, end_key_Gsys, False)
 
-        # 3) volume and densities of stable phases
+        # 3) equilibrium assemblage, stable phases
+        start_key_phases = "         phase                   N         mol%                                   x              x         activity       act.(x)"
+        end_key_phases = " volumes and densities of stable phases:"
+        block_phases, residual_output = TherCaller.output_block_finder(residual_output, start_key_phases, end_key_phases, True)
+
+        # 4) volume and densities of stable phases
         start_key_volume = " volumes and densities of stable phases:"
         # choose end_key_volume, so that always present independent if fluids are stable or not (this will affect the text of the theriak output)
         end_key_volume = " compositions of stable phases [ mol% ]:"
         # don't pass the residual output here, because the fluid block comes before end_key_volume in the theriak output
         block_volume, residual_output_NOT_TO_USE = TherCaller.output_block_finder(residual_output, start_key_volume, end_key_volume, True)
 
-        # 4) gases and fluids
+        # 5) gases and fluids
         start_key_fluid = "  gases and fluids       N       volume/mol  volume[ccm]               wt/mol       wt [g]              density [g/ccm]"
         end_key_fluid = " H2O content of stable phases:"
         try:
@@ -179,27 +240,31 @@ class TherCaller():
             fluids_stable = False
             block_fluid = []
 
-        # 5) phase compositions; elements in moles in stable phases + in total system (=bulk)
+        # 6) phase compositions; elements in moles in stable phases + in total system (=bulk)
         start_key_elements = " elements in stable phases:"
         end_key_elements = " elements per formula unit:"
         block_elements, residual_output = TherCaller.output_block_finder(residual_output, start_key_elements, end_key_elements, False)
 
-        # 6) phase composition: elements per formula unit
+        # 7) phase composition: elements per formula unit
         start_key_composition = " elements per formula unit:"
         end_key_composition = " activities of all phases:"
         block_composition, residual_output = TherCaller.output_block_finder(residual_output, start_key_composition, end_key_composition, True)
 
-        # 7) activities of all phases: delta_G above stable plain
+        # 8) activities of all phases: delta_G above stable plain
         start_key_deltaG = " activities of all phases:"
         end_key_deltaG = " chemical potentials of components:"
         block_deltaG, residual_output = TherCaller.output_block_finder(residual_output, start_key_deltaG, end_key_deltaG, True)
 
-        # 8) chemical potential of components
-        # ## OPTIONAL, to be discussed if necessary.
+        # 9) chemical potential of components
+        # ## future addition.
 
-        # blocks = [block_bulk, block_Gsys, block_volume, block_fluid, block_elements, block_composition, block_deltaG]
+        # 10) extract subblocks from block_phases for end-member properties of solution phases
+        solution_subblocks = TherCaller.extract_solution_subblocks(block_phases=block_phases, verbose=self.verbose_mode)
+
         blocks = {"block_bulk": block_bulk,
                   "block_Gsys": block_Gsys,
+                  "block_phases": block_phases,
+                  "block_solutions": solution_subblocks,
                   "block_volume": block_volume,
                   "block_fluid": block_fluid,
                   "block_elements": block_elements,
@@ -230,11 +295,11 @@ class TherCaller():
         rock.add_bulk_rock_composition(block_bulk=blocks["block_bulk"])
         rock.add_g_system(block_Gsys=blocks["block_Gsys"])
         rock.add_bulk_density(block_volume=blocks["block_volume"])
-        rock.add_minerals(block_volume=blocks["block_volume"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
-                          output_line_overflow=output_line_overflow)
+        rock.add_minerals(block_volume=blocks["block_volume"], block_solutions=blocks["block_solutions"], block_composition=blocks["block_composition"],
+                          block_elements=blocks["block_elements"], output_line_overflow=output_line_overflow, verbose=self.verbose_mode)
         if fluids_stable:
-            rock.add_fluids(block_fluid=blocks["block_fluid"], block_composition=blocks["block_composition"], block_elements=blocks["block_elements"],
-                            output_line_overflow=output_line_overflow)
+            rock.add_fluids(block_fluid=blocks["block_fluid"], block_solutions=blocks["block_solutions"], block_composition=blocks["block_composition"],
+                            block_elements=blocks["block_elements"], output_line_overflow=output_line_overflow)
         rock.add_deltaG(block_deltaG=blocks["block_deltaG"])
         rock.add_g_system_per_mol()
 
@@ -255,8 +320,8 @@ class TherCaller():
             return rock, element_list
 
         else:
-            # for a failed minimisation return the raw theriak output.
-            return theriak_output
+            # for a failed minimisation return the raw theriak output. And an empty list instead of the element_list
+            return theriak_output, []
 
 
 class Rock:
@@ -391,7 +456,8 @@ class Rock:
 
         self.bulk_density = bulk_density
 
-    def add_minerals(self, block_volume: list, block_composition: list, block_elements: list, output_line_overflow: bool):
+    def add_minerals(self, block_volume: list, block_solutions: list, block_composition: list,
+                     block_elements: list, output_line_overflow: bool, verbose: bool = True):
         temp_name_list = Rock.get_mineral_list(block_volume=block_volume)
 
         for temp_name in temp_name_list:
@@ -404,9 +470,13 @@ class Rock:
                                           temp_name=temp_name,
                                           output_line_overflow=output_line_overflow)
 
+            if temp_name in block_solutions.keys():
+                mineral.add_endmember_properties(solution_phase_subblock=block_solutions[temp_name])
+
             self.mineral_assemblage.append(mineral)
 
-    def add_fluids(self, block_fluid: list, block_composition: list, block_elements: list, output_line_overflow: bool):
+    def add_fluids(self, block_fluid: list, block_solutions: list, block_composition: list,
+                   block_elements: list, output_line_overflow: bool):
         fluid_name_list = Rock.get_fluid_list(block_fluid=block_fluid)
 
         for fluid_name in fluid_name_list:
@@ -418,6 +488,9 @@ class Rock:
             fluid.add_composition_moles(block_elements=block_elements,
                                         temp_name=fluid_name,
                                         output_line_overflow=output_line_overflow)
+
+            if fluid_name in block_solutions.keys():
+                fluid.add_endmember_properties(solution_phase_subblock=block_solutions[fluid_name])
 
             self.fluid_assemblage.append(fluid)
 
@@ -441,6 +514,8 @@ class Rock:
 class Phase:
     def __init__(self, phase_name) -> None:
         self.name = phase_name
+        # A Phase is a priori a pure phase, only add_endmember_properties() updates this state attribute to True for solutions.
+        self.solution_phase: bool = False
 
     def add_composition_apfu(self, block_composition: list, temp_name: str, output_line_overflow: bool):
         """_summary_
@@ -484,6 +559,29 @@ class Phase:
         phase_composition = [float(x) for x in phase_composition]
 
         self.composition_moles = phase_composition
+
+    def add_endmember_properties(self, solution_phase_subblock: list):
+        # update state-attribute to mark phase as solution
+        self.solution_phase = True
+        # read the solution phase subblock
+        lines = [line.split() for line in solution_phase_subblock]
+        # get rid off additional entries in the first line (pre-fix, phase, N, mol%)
+        first_line = lines[0][5:]
+        lines[0] = first_line
+
+        endmember_activities = {}
+        endmember_fractions = {}
+
+        for line in lines:
+            endmember_name = line[0]
+            activity = float(line[-2])
+            fraction = float(line[-4])
+
+            endmember_activities[endmember_name] = activity
+            endmember_fractions[endmember_name] = fraction
+
+        self.endmember_activities = endmember_activities
+        self.endmember_fractions = endmember_fractions
 
 
 class Mineral(Phase):

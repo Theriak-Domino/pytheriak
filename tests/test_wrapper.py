@@ -102,6 +102,7 @@ benchmark_biotite_compositon_mol = [4.418892, 0.387275, 0.0, 0.709575, 0.736482,
 def test_add_minerals():
     test_rock = Rock(pressure=6046, temperature=417)
     test_rock.add_minerals(block_volume=block_volume,
+                           block_solutions={"a place holder empty list": None},
                            block_composition=block_composition,
                            block_elements=block_elements,
                            output_line_overflow=output_overflow)
@@ -109,6 +110,55 @@ def test_add_minerals():
     assert [mineral.name for mineral in test_rock.mineral_assemblage] == benchmark_mineral_names
     assert [mineral.composition_apfu for mineral in test_rock.mineral_assemblage if mineral.name == "BI05_ann"][0] == benchmark_biotite_compositon
     assert [mineral.composition_moles for mineral in test_rock.mineral_assemblage if mineral.name == "BI05_ann"][0] == benchmark_biotite_compositon_mol
+
+
+def test_add_endmember_properties():
+    theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
+                                 database="ds55HP1_ONLYtestPytheriak.txt",
+                                 theriak_version="v28.05.2022",
+                                 verbose=True)
+
+    rock, element_list = theriak.minimisation(pressure=5000, temperature=450,
+                                              bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)")
+
+    biotite_activities = [mineral.endmember_activities for mineral in rock.mineral_assemblage if mineral.name == "BI05_ann"][0]
+    print(biotite_activities["phl"])
+    print(biotite_activities["ann"])
+    assert biotite_activities["phl"] == 0.0135931, "Phlogopite act in biotite does not match."
+    assert biotite_activities["ann"] == 0.290152, "Annite act in biotite does not match."
+
+    # check also for a failing minimisation
+    rock, element_list = theriak.minimisation(pressure=5000, temperature=450,
+                                              bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)",
+                                              return_failed_minimisation=True)
+
+    chlorite_activities = [mineral.endmember_activities for mineral in rock.mineral_assemblage if mineral.name == "CHL_daph"][0]
+    print(chlorite_activities["daph"])
+    print(chlorite_activities["ames"])
+    assert chlorite_activities["daph"] == 1.00000, "Failed minimisation case: Daphnite act in biotite does not match."
+    assert chlorite_activities["ames"] == 0.0552862, "Failed minimisation case: Amesite act in biotite does not match."
+
+    # additional test, with different accessing of solutions
+    solutions = [mineral.name for mineral in rock.mineral_assemblage if mineral.solution_phase]
+    assert solutions == ["WM02V_mu", "CHL_daph", "ILMTERN_ilm", "OPX_fs", "CTD_fctd"], "Name-list of solutions does not match."
+
+    # check for fluid solutions
+    theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
+                                 database="JUN92d_ONLYtestPytheriak.bs",
+                                 theriak_version="v28.05.2022",
+                                 verbose=True)
+
+    rock, element_list = theriak.minimisation(pressure=5000, temperature=450,
+                                              bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)C(25)O(?)")
+
+    fluid_activities = [fluid.endmember_activities for fluid in rock.fluid_assemblage if fluid.name == "H2O-CO2_H2O"][0]
+    assert fluid_activities["STEAM"] == 0.575980, "STEAM activity in fluid phase does not match."
+
+    fluid_endmembers = [fluid.endmember_fractions for fluid in rock.fluid_assemblage if fluid.name == "H2O-CO2_H2O"][0]
+    assert fluid_endmembers["CARBON-DIOXIDE"] == 0.424020, "STEAM activity in fluid phase does not match."
+    # check if state-attribute Phase().solution_phase is working correctly
+    fluid_endmembers = [fluid.endmember_fractions for fluid in rock.fluid_assemblage if fluid.solution_phase][0]
+    assert fluid_endmembers["CARBON-DIOXIDE"] == 0.424020, "STEAM activity in fluid phase not match. Phase().solution_phase attr prob not updated correctly."
 
 
 def test_add_bulk_density():
@@ -119,7 +169,7 @@ def test_add_bulk_density():
 
 
 def test_TherCaller():
-    """To run this test a  theriak.ini (on Windows) and the correct dtabase must be place in the projects folder.
+    """To run this test a  theriak.ini (on Windows) and the correct database must be place in the projects folder.
     """
     theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
                                  database="ds55HP1_ONLYtestPytheriak.txt",
@@ -152,8 +202,8 @@ def test_TherCaller_failed_minimisation():
                                  theriak_version="v28.05.2022",
                                  verbose=True)
 
-    fail_string = theriak.minimisation(pressure=3863, temperature=656,
-                                       bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)")
+    fail_string, element_list_placeholder = theriak.minimisation(pressure=3863, temperature=656,
+                                                                 bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)")
     rock, element_list = theriak.minimisation(pressure=3863, temperature=656,
                                               bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)",
                                               return_failed_minimisation=True)
@@ -166,6 +216,7 @@ def test_TherCaller_failed_minimisation():
 
 if __name__ == "__main__":
     test_add_minerals()
+    test_add_endmember_properties()
     test_add_bulk_density()
     test_TherCaller()
     test_TherCaller_failed_minimisation()
