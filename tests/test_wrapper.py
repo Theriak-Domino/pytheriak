@@ -138,6 +138,10 @@ def test_add_endmember_properties():
     assert chlorite_activities["daph"] == 1.00000, "Failed minimisation case: Daphnite act in biotite does not match."
     assert chlorite_activities["ames"] == 0.0552862, "Failed minimisation case: Amesite act in biotite does not match."
 
+    # additional test, with different accessing of solutions
+    solutions = [mineral.name for mineral in rock.mineral_assemblage if mineral.solution_phase]
+    assert solutions == ["WM02V_mu", "CHL_daph", "ILMTERN_ilm", "OPX_fs", "CTD_fctd"], "Name-list of solutions does not match."
+
     # check for fluid solutions
     theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
                                  database="JUN92d_ONLYtestPytheriak.bs",
@@ -148,7 +152,13 @@ def test_add_endmember_properties():
                                               bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)C(25)O(?)")
 
     fluid_activities = [fluid.endmember_activities for fluid in rock.fluid_assemblage if fluid.name == "H2O-CO2_H2O"][0]
-    assert fluid_activities["STEAM"] == 0.575980
+    assert fluid_activities["STEAM"] == 0.575980, "STEAM activity in fluid phase does not match."
+
+    fluid_endmembers = [fluid.endmember_fractions for fluid in rock.fluid_assemblage if fluid.name == "H2O-CO2_H2O"][0]
+    assert fluid_endmembers["CARBON-DIOXIDE"] == 0.424020, "STEAM activity in fluid phase does not match."
+    # check if state-attribute Phase().solution_phase is working correctly
+    fluid_endmembers = [fluid.endmember_fractions for fluid in rock.fluid_assemblage if fluid.solution_phase][0]
+    assert fluid_endmembers["CARBON-DIOXIDE"] == 0.424020, "STEAM activity in fluid phase not match. Phase().solution_phase attr prob not updated correctly."
 
 
 def test_add_bulk_density():

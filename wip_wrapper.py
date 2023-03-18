@@ -2,11 +2,12 @@
 from src.pytheriak import wrapper
 # %%
 theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
-                             database="JUN92d_ONLYtestPytheriak.bs",
+                             database="ds55HP1_ONLYtestPytheriak.txt",
                              theriak_version="v28.05.2022",
                              verbose=True)
 
-out = theriak.call_theriak(3863, 656, "SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)C(50)O(?)")
+out = theriak.call_theriak(5000, 450, "SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)")
+
 blocks = theriak.read_theriak(out)[0]
 # %%
 blocks["block_phases"]

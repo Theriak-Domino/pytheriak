@@ -57,18 +57,12 @@ class TherCaller():
         # solution phases are marked bijectively by "  0" followed by the solution number in this block
         start_key = "   0"
         start_indices = [idx for idx, line in enumerate(block_phases) if line.startswith(start_key)]
-        end_key = " "
-        end_indices = [idx for idx, line in enumerate(block_phases) if line == end_key]
-        # only keep end_inidces with a corresponding start index.
-        # solution phases are always listed first
-        end_indices[:len(start_indices)]
+        # shift start_idx and append last line as last end_idx
+        end_indices = start_indices[1:]
+        end_indices.append(len(block_phases))
 
         for start_idx, end_idx in zip(start_indices, end_indices):
             solution_subblock = block_phases[start_idx:end_idx]
-            # filter out lines containing info about site occupancy or element fractions (e.g. XMg, Al(pfu))
-            # the lines containing end-member fractions and activities are the only ones ending with a double-space "  "
-            # this is represented with the regex pattern: "Any digit""Space""Space""End of string" = "\d\s\s$"
-            solution_subblock = [line for line in solution_subblock if len(re.findall(pattern=r"\d\s\s$", string=line)) == 1]
 
             # if minimisation failed, subblock layout changes!
             # check for "activity test", if present remove additional lines.
@@ -79,6 +73,11 @@ class TherCaller():
                 solution_subblock = [string.replace("**", "  ") for string in solution_subblock]
                 if verbose:
                     print("WARNING: Minimisation might have failed. End-member activities of solutions might be wrong.")
+
+            # filter out lines containing info about site occupancy or element fractions (e.g. XMg, Al(pfu))
+            # the lines containing end-member fractions and activities are the only ones ending with a double-space "  "
+            # this is represented with the regex pattern: "Any digit""Space""Space""End of string" = "\d\s\s$"
+            solution_subblock = [line for line in solution_subblock if len(re.findall(pattern=r"\d\s\s$", string=line)) == 1]
 
             # extract solution name from first line / 3rd entry of the solution subblock
             solution_name = solution_subblock[0].split()[2]
@@ -515,6 +514,8 @@ class Rock:
 class Phase:
     def __init__(self, phase_name) -> None:
         self.name = phase_name
+        # A Phase is a priori a pure phase, only add_endmember_properties() updates this state attribute to True for solutions.
+        self.solution_phase: bool = False
 
     def add_composition_apfu(self, block_composition: list, temp_name: str, output_line_overflow: bool):
         """_summary_
@@ -560,6 +561,8 @@ class Phase:
         self.composition_moles = phase_composition
 
     def add_endmember_properties(self, solution_phase_subblock: list):
+        # update state-attribute to mark phase as solution
+        self.solution_phase = True
         # read the solution phase subblock
         lines = [line.split() for line in solution_phase_subblock]
         # get rid off additional entries in the first line (pre-fix, phase, N, mol%)
