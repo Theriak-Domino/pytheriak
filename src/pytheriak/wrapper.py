@@ -393,6 +393,21 @@ class Rock:
         self.bulk_composition_moles = None
         self.bulk_composition_mol_percent = None
 
+    def __dir__(self):
+        """Overwrite dir() to only return objects attriubutes holding thermodynamic state properties.
+
+        Returns:
+            (list): List of Rock-attrs holding state properties of minimised system.
+        """
+        return ["mineral_assemblage",
+                "fluid_assemblage",
+                "mineral_delta_G",
+                "g_system",
+                "pressure",
+                "temperature",
+                "bulk_composition_moles",
+                "bulk_composition_mol_percent"]
+
     def add_therin_to_reproduce(self, PT: str, bulk: str):
         """Passes THERIN strings from the TherCaller.call-theriak() to the Rock object
 
