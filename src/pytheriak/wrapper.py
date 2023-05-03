@@ -403,10 +403,13 @@ class Rock:
                 "fluid_assemblage",
                 "mineral_delta_G",
                 "g_system",
+                "g_system_per_mol_of_input",
                 "pressure",
                 "temperature",
                 "bulk_composition_moles",
-                "bulk_composition_mol_percent"]
+                "bulk_composition_mol_percent",
+                "therin_PT",
+                "therin_bulk"]
 
     def add_therin_to_reproduce(self, PT: str, bulk: str):
         """Passes THERIN strings from the TherCaller.call-theriak() to the Rock object
