@@ -1,5 +1,6 @@
 from pytheriak import wrapper, hdfwriter
 import h5py
+import numpy as np
 
 
 def create_rockcollection():
@@ -69,8 +70,20 @@ def test_bulkcomposition(hdf_file, rock_group_names):
     assert bulk_in_mol[element_idx.index("H")] == H, "H in bulk composition is not correct."
 
 
+def test_dG_metasatbale_minerals(hdf_file, rock_group_names):
+    BENCHMARK_dG_ST_fst_rock1 = 3.01992E+03
+
+    list_metastable_minerals_rock1 = hdf_file[rock_group_names[0]]["meta-stable_minerals"].asstr()[:, 0]
+    idx_ST_fst_rock1 = np.where(list_metastable_minerals_rock1 == "ST_fst")[0]
+
+    dG_ST_fst_rock1 = hdf_file[rock_group_names[0]]["meta-stable_minerals"][idx_ST_fst_rock1, 1][0]
+
+    assert dG_ST_fst_rock1 == BENCHMARK_dG_ST_fst_rock1, "dG of ST_fst in first rock is not correct. Retrieved was the value: " + str(dG_ST_fst_rock1)
+
+
 if __name__ == "__main__":
     create_rockcollection()
     test_write_to_hdf()
     hdf_file, rock_group_names = read_hdf_file()
     test_bulkcomposition(hdf_file, rock_group_names)
+    test_dG_metasatbale_minerals(hdf_file, rock_group_names)
