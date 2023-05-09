@@ -523,10 +523,10 @@ class Rock:
         idx_of_firstZEROS = [i.index("0.00000E+00") for i in metastable_list]
         metastable_list_names = [i[2] for i in metastable_list]
         metastable_list_deltaG = [i[idx + 1] for i, idx in zip(metastable_list, idx_of_firstZEROS)]
+        metastable_list_deltaG = [float(i) for i in metastable_list_deltaG]
 
-        metastable_list = np.array([metastable_list_names, metastable_list_deltaG])
-        metastable_list = np.transpose(metastable_list).tolist()
-        self.mineral_delta_G = metastable_list
+        mineral_delta_G = dict(zip(metastable_list_names, metastable_list_deltaG))
+        self.mineral_delta_G = mineral_delta_G
 
 
 class Phase:
