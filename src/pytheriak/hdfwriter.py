@@ -71,4 +71,6 @@ class HDF5writer:
                     fluid_group.create_dataset("phase_composition_moles", data=fluid.composition_moles)
 
                 # save deltaG of all metastable minerals for the Rock()
-                rock_group.create_dataset("meta-stable_minerals", data=rock.mineral_delta_G)
+                metastable_minerals_dataset = rock_group.create_dataset("delta_G_meta-stable_minerals", data=rock.mineral_delta_G.values())
+                metastable_minerals_dataset.attrs["mineral_names"] = list(rock.mineral_delta_G.keys())
+                metastable_minerals_dataset.attrs["unit"] = "joules"
