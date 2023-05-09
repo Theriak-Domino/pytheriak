@@ -49,7 +49,7 @@ This method returns a Rock-object containing all the properties of the minimised
 
 An easy way to checkout all accessible properties is looking at the object's attributes using ...
 ```python
-vars(rock).keys()
+dir(rock)
 ```
 Useful rock properties are:
 ```python
