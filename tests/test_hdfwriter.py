@@ -73,10 +73,10 @@ def test_bulkcomposition(hdf_file, rock_group_names):
 def test_dG_metasatbale_minerals(hdf_file, rock_group_names):
     BENCHMARK_dG_ST_fst_rock1 = 3.01992E+03
 
-    list_metastable_minerals_rock1 = hdf_file[rock_group_names[0]]["meta-stable_minerals"].asstr()[:, 0]
+    list_metastable_minerals_rock1 = hdf_file[rock_group_names[0]]["delta_G_meta-stable_minerals"].attrs["mineral names"]
     idx_ST_fst_rock1 = np.where(list_metastable_minerals_rock1 == "ST_fst")[0]
 
-    dG_ST_fst_rock1 = hdf_file[rock_group_names[0]]["meta-stable_minerals"][idx_ST_fst_rock1, 1][0]
+    dG_ST_fst_rock1 = hdf_file[rock_group_names[0]]["delta_G_meta-stable_minerals"][idx_ST_fst_rock1][0]
 
     assert dG_ST_fst_rock1 == BENCHMARK_dG_ST_fst_rock1, "dG of ST_fst in first rock is not correct. Retrieved was the value: " + str(dG_ST_fst_rock1)
 
