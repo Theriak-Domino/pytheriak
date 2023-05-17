@@ -306,7 +306,20 @@ class TherCaller():
         return rock
 
     def minimisation(self, pressure: int, temperature: int, bulk: str, return_failed_minimisation: bool = False):
-        # A compositon of call_theriak --> check_minimisation --> read_theriak; returning a rock, ele_list
+        """Perform a minimisation of the Gibbs free energy of the system at given P-T-X conditions.
+        Encapsulates: call_theriak --> check_minimisation --> read_theriak --> create_rock
+
+        Args:
+            pressure (int): Pressure in bar
+            temperature (int): Temperature in °C
+            bulk (str): Bulk rock composition in the Theriak-Domino format. Element in caps, followed by moles/mol percent in brackets: "E(10.3)".
+            return_failed_minimisation (bool, optional): Whether a possibly failed minimisation is returned or not. Defaults to False.
+
+        Returns:
+            rock(pytheriak.Rock): A pytheriak.Rock object encapsulating the results of the minimisation.
+            element_list (list): element_list, element-idx list globally valid for all compositional data.
+        """
+        # A composition of call_theriak --> check_minimisation --> read_theriak; returning a rock, ele_list
         theriak_output = TherCaller.call_theriak(self, pressure=pressure, temperature=temperature, bulk=bulk)
         minimisation_state = TherCaller.check_minimisation(self, theriak_output=theriak_output)
         if return_failed_minimisation:

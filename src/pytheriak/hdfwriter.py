@@ -7,14 +7,14 @@ class HDF5writer:
     def __init__(self, path_parent: str, filename: str) -> None:
         self.hdffile_path = Path(path_parent, filename + ".hdf5")
 
-    def write_file(self, rock_collection: list, element_list: list, init_parameters_TherCaller, author_name: str = "philip hartmeier"):
+    def write_file(self, rock_collection: list, element_list: list, init_parameters_TherCaller, author_name: str = "unknown author"):
         """_summary_
 
         Args:
             rock_collection (list): _description_
             element_list (list): _description_
             init_parameters_TherCaller (pytheriak.wrapper.TherCaller): _description_
-            author_name (str, optional): _description_. Defaults to "philip hartmeier".
+            author_name (str, optional): _description_. Defaults to "unknown author".
         """
         with h5py.File(self.hdffile_path, "w") as hdf_file:
             hdf_file.attrs["date"] = str(date.today())
