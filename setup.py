@@ -5,8 +5,8 @@ with open("README.md", "r") as rm:
 
 setup(
     name="pytheriak",
-    version="0.0.19",
-    description="Wrappers to call and read_out theriak from python.",
+    version="1.0.0",
+    description="Python wrapper functions for Theriak-Domino.",
     long_description=long_description,
     long_description_content_type="text/markdown",
     py_modules=["pytheriak.wrapper", "pytheriak.hdfwriter"],
