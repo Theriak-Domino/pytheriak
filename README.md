@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/pytheriak.svg)](https://badge.fury.io/py/pytheriak)
+
 # pytheriak
 Python wrapper functions for Theriak-Domino.
 ## Installation
