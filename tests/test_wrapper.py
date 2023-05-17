@@ -124,23 +124,23 @@ def test_add_endmember_properties():
     biotite_activities = [mineral.endmember_activities for mineral in rock.mineral_assemblage if mineral.name == "BI05_ann"][0]
     print(biotite_activities["phl"])
     print(biotite_activities["ann"])
-    assert biotite_activities["phl"] == 0.0135931, "Phlogopite act in biotite does not match."
-    assert biotite_activities["ann"] == 0.290152, "Annite act in biotite does not match."
+    assert biotite_activities["phl"] == 0.0135930, "Phlogopite act in biotite does not match."
+    assert biotite_activities["ann"] == 0.290153, "Annite act in biotite does not match."
 
-    # check also for a failing minimisation
-    rock, element_list = theriak.minimisation(pressure=5000, temperature=450,
-                                              bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)",
-                                              return_failed_minimisation=True)
+    # NO longer the case with new version of theriak! check also for a failing minimisation
+    # rock, element_list = theriak.minimisation(pressure=5000, temperature=450,
+    #                                           bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)",
+    #                                           return_failed_minimisation=True)
 
-    chlorite_activities = [mineral.endmember_activities for mineral in rock.mineral_assemblage if mineral.name == "CHL_daph"][0]
-    print(chlorite_activities["daph"])
-    print(chlorite_activities["ames"])
-    assert chlorite_activities["daph"] == 1.00000, "Failed minimisation case: Daphnite act in biotite does not match."
-    assert chlorite_activities["ames"] == 0.0552862, "Failed minimisation case: Amesite act in biotite does not match."
+    # chlorite_activities = [mineral.endmember_activities for mineral in rock.mineral_assemblage if mineral.name == "CHL_daph"][0]
+    # print(chlorite_activities["daph"])
+    # print(chlorite_activities["ames"])
+    # assert chlorite_activities["daph"] == 1.00000, "Failed minimisation case: Daphnite act in chlorite does not match."
+    # assert chlorite_activities["ames"] == 0.0552862, "Failed minimisation case: Amesite act in chlorite does not match."
 
     # additional test, with different accessing of solutions
     solutions = [mineral.name for mineral in rock.mineral_assemblage if mineral.solution_phase]
-    assert solutions == ["WM02V_mu", "CHL_daph", "ILMTERN_ilm", "OPX_fs", "CTD_fctd"], "Name-list of solutions does not match."
+    assert solutions == ["WM02V_mu", "BI05_ann", "CHL_daph", "ILMTERN_ilm"], "Name-list of solutions does not match."
 
     # check for fluid solutions
     theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
@@ -192,26 +192,27 @@ def test_TherCaller():
     assert [fluid.composition_apfu for fluid in rock.fluid_assemblage if fluid.name == "H2O"][0] == bm_fluid_composition, "Fluid composition failed"
 
 
-def test_TherCaller_failed_minimisation():
-    """To run this test a  theriak.ini (on Windows) and the correct dtabase must be place in the projects folder.
-    """
-    print("Two WARNINGS for failed minimisation should be printet below:")
+# no longer working with the newest version of theriak
+# def test_TherCaller_failed_minimisation():
+#     """To run this test a  theriak.ini (on Windows) and the correct database must be place in the projects folder.
+#     """
+#     print("Two WARNINGS for failed minimisation should be printet below:")
 
-    theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
-                                 database="ds55HP1_ONLYtestPytheriak.txt",
-                                 theriak_version="v28.05.2022",
-                                 verbose=True)
+#     theriak = wrapper.TherCaller(programs_dir="C:\\TheriakDominoWIN\\Programs",
+#                                  database="ds55HP1_ONLYtestPytheriak.txt",
+#                                  theriak_version="v28.05.2022",
+#                                  verbose=True)
 
-    fail_string, element_list_placeholder = theriak.minimisation(pressure=3863, temperature=656,
-                                                                 bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)")
-    rock, element_list = theriak.minimisation(pressure=3863, temperature=656,
-                                              bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)",
-                                              return_failed_minimisation=True)
+#     fail_string, element_list_placeholder = theriak.minimisation(pressure=3863, temperature=656,
+#                                                                  bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)")
+#     rock, element_list = theriak.minimisation(pressure=3863, temperature=656,
+#                                               bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)",
+#                                               return_failed_minimisation=True)
 
-    bm_g_system = -117647924.43
+#     bm_g_system = -117647924.43
 
-    assert type(fail_string) == str, "failed minimisation not detected"
-    assert rock.g_system == bm_g_system
+#     assert type(fail_string) == str, "failed minimisation not detected"
+#     assert rock.g_system == bm_g_system
 
 
 if __name__ == "__main__":
@@ -219,4 +220,4 @@ if __name__ == "__main__":
     test_add_endmember_properties()
     test_add_bulk_density()
     test_TherCaller()
-    test_TherCaller_failed_minimisation()
+    # test_TherCaller_failed_minimisation()
