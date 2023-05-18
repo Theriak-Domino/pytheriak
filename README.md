@@ -1,4 +1,6 @@
 [![PyPI version](https://badge.fury.io/py/pytheriak.svg)](https://badge.fury.io/py/pytheriak)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7945482.svg)](https://doi.org/10.5281/zenodo.7945482)
+
 
 # pytheriak
 Python wrapper functions for Theriak-Domino.
@@ -74,3 +76,13 @@ A quick, easy and pythonic way to retrieve properties is using list comprehensio
 [mineral.name for mineral in rock.mineral_assemblage]
 [mineral.composition_apfu for mineral in rock.mineral_assemblage]
 ```
+
+## Cite pytheriak
+
+The pytheriak package is registered on Zenodo. If you use pytheriak in your research, please cite it using the following DOI:
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7945482.svg)](https://doi.org/10.5281/zenodo.7945482)
+
+## License
+
+Theriak-Domino/pytheriak is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE) for more details.
