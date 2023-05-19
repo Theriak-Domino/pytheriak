@@ -1,4 +1,4 @@
-[![PyPI version](https://badge.fury.io/py/pytheriak.svg)](https://badge.fury.io/py/pytheriak)
+[![PyPI version](https://badge.fury.io/py/pytheriak.svg&kill_cache=1)](https://badge.fury.io/py/pytheriak)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7945482.svg)](https://doi.org/10.5281/zenodo.7945482)
 
 
