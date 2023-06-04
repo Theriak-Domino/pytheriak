@@ -606,7 +606,7 @@ class Phase:
         for line in lines:
             endmember_name = line[0]
             activity = float(line[-2])
-            fraction = float(line[-4])
+            fraction = float(line[-3])
 
             endmember_activities[endmember_name] = activity
             endmember_fractions[endmember_name] = fraction
