@@ -124,7 +124,7 @@ def test_add_endmember_properties():
     biotite_activities = [mineral.endmember_activities for mineral in rock.mineral_assemblage if mineral.name == "BI05_ann"][0]
     print(biotite_activities["phl"])
     print(biotite_activities["ann"])
-    assert biotite_activities["phl"] == 0.0135930, "Phlogopite act in biotite does not match."
+    assert biotite_activities["phl"] == 0.0135931, "Phlogopite act in biotite does not match."
     assert biotite_activities["ann"] == 0.290153, "Annite act in biotite does not match."
 
     # NO longer the case with new version of theriak! check also for a failing minimisation

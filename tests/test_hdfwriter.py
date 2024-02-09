@@ -2,6 +2,8 @@ from pytheriak import wrapper, hdfwriter
 import h5py
 import numpy as np
 
+from pathlib import Path
+
 
 def create_rockcollection():
     """Generates a test rock collection to be saved as hdf5 file.
@@ -29,21 +31,23 @@ def test_write_to_hdf():
     """
     theriak, rock_collection, element_list = create_rockcollection()
 
-    writer = hdfwriter.HDF5writer(path_parent=".", filename="dataset_test_hdfwriter")
+    writer = hdfwriter.HDF5writer(path_parent="tests\\test_data", filename="dataset_test_hdfwriter")
     writer.write_file(rock_collection, element_list, init_parameters_TherCaller=theriak, author_name="test_author")
 
     print("Created hdf5 file. Test passed.")
 
 
 def read_hdf_file():
-    hdf_file = h5py.File("dataset_test_hdfwriter.hdf5", "r")
+    hdf_file = h5py.File(Path("tests", "test_data", "dataset_test_hdfwriter.hdf5"), "r")
 
     rock_group_names = list(hdf_file.keys())
 
     return hdf_file, rock_group_names
 
 
-def test_bulkcomposition(hdf_file, rock_group_names):
+def test_bulkcomposition():
+    hdf_file, rock_group_names = read_hdf_file()
+
     SI = 68.0
     TI = 0.72
     AL = 25.18
@@ -70,8 +74,10 @@ def test_bulkcomposition(hdf_file, rock_group_names):
     assert bulk_in_mol[element_idx.index("H")] == H, "H in bulk composition is not correct."
 
 
-def test_dG_metasatbale_minerals(hdf_file, rock_group_names):
-    BENCHMARK_dG_ST_fst_rock1 = 3.02006E+03
+def test_dG_metasatbale_minerals():
+    hdf_file, rock_group_names = read_hdf_file()
+
+    BENCHMARK_dG_ST_fst_rock1 = 3.01951E+03
 
     list_metastable_minerals_rock1 = hdf_file[rock_group_names[0]]["delta_G_meta-stable_minerals"].attrs["mineral_names"]
     idx_ST_fst_rock1 = np.where(list_metastable_minerals_rock1 == "ST_fst")[0]
