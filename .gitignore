@@ -1,10 +1,12 @@
 ds55HP1_ONLYtestPytheriak.txt
 JUN92d_ONLYtestPytheriak.bs
-ds55HPT.txt
 theriak.ini
 theriak.last
 THERIN
 OUT
+
+# poetry
+poetry.lock
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
