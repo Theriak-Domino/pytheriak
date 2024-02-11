@@ -1,10 +1,11 @@
-[![PyPI version](https://badge.fury.io/py/pytheriak.svg)](https://badge.fury.io/py/pytheriak)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7945482.svg)](https://doi.org/10.5281/zenodo.7945482)
-
-
 # pytheriak
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7945482.svg?style=flat)](https://doi.org/10.5281/zenodo.7945482)
+
 Python wrapper functions for Theriak-Domino.
+
 ## Installation
+[![PyPI](https://img.shields.io/pypi/v/pytheriak.svg?style=flat)](https://pypi.python.org/pypi/pytheriak)
+[![Compatible Python Versions](https://img.shields.io/pypi/pyversions/pytheriak.svg?style=flat)](https://pypi.python.org/pypi/pytheriak/)
 
 You can install the package from pypi.org.
 Run the following to install:
@@ -81,7 +82,7 @@ A quick, easy and pythonic way to retrieve properties is using list comprehensio
 
 The pytheriak package is registered on Zenodo. If you use pytheriak in your research, please cite it using the following DOI:
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7945482.svg)](https://doi.org/10.5281/zenodo.7945482)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7945482.svg?style=flat)](https://doi.org/10.5281/zenodo.7945482)
 
 ## License
 
