@@ -86,27 +86,6 @@ class TherCaller():
 
         return block_solution_phases
 
-    @staticmethod
-    def check_for_corrupted_bulk(bulk: str):
-        """Checks if bulk has an non-zero amount of all elemetns in the system.
-        If this is not the case, theriak will remove the element from the bulk. Resulting in an unwanted reduction of the systems components.
-        In this case the element_idx list would no longer be globally valid!
-
-        Args:
-            bulk (str): A bulk in the THERIN format
-
-        Returns:
-            bool: TRUE, if bulk is valid, FALSE for corrupted bulk.
-        """
-        matches = re.findall(pattern=r"\(0\)", string=bulk)
-        matches += (re.findall(pattern=r"0.0+\)", string=bulk))
-
-        if len(matches) == 0:
-            return True
-        else:
-            print("WARNING: Corrupted bulk, THERIN bulk (str) contains an element which is 0.")
-            return False
-
     def __init__(self, programs_dir: str, database: str, theriak_version: str, verbose: bool = True):
         """Creates a TherCaller intance.
         For calling theriak, the theriak.ini file must be copied from the programs folder to the working directory.
@@ -335,6 +314,27 @@ class TherCaller():
         else:
             # for a failed minimisation return the raw theriak output. And an empty list instead of the element_list
             return theriak_output, []
+
+    def check_for_corrupted_bulk(self, bulk: str):
+        """Checks if bulk has an non-zero amount of all elemetns in the system.
+        If this is not the case, theriak will remove the element from the bulk. Resulting in an unwanted reduction of the systems components.
+        In this case the element_idx list would no longer be globally valid!
+
+        Args:
+            bulk (str): A bulk in the THERIN format
+
+        Returns:
+            bool: TRUE, if bulk is valid, FALSE for corrupted bulk.
+        """
+        matches = re.findall(pattern=r"\(0\)", string=bulk)
+        matches += (re.findall(pattern=r"0.0+\)", string=bulk))
+
+        if len(matches) == 0:
+            return True
+        else:
+            if self.verbose_mode:
+                print("WARNING: Corrupted bulk, THERIN bulk (str) contains an element which is 0.")
+            return False
 
 
 class Rock:
