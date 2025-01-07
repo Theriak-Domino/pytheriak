@@ -31,7 +31,7 @@ theriak = wrapper.TherCaller(programs_dir="..\Programs",
                              database="a database file",
                              theriak_version="v2023.01.02beta")
 ```
-As input for Theriak define:\
+As input for Theriak define:
 1. Pressure in bars.
 ```python
 pressure = 4000
