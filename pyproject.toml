@@ -1,6 +1,6 @@
 [project]
 name = "pytheriak"
-version = "1.1.1"
+version = "1.1.2"
 description = "Python wrapper functions for Theriak-Domino."
 authors = [{ name = "Philip Hartmeier", email = "philip.hartmeier@unil.ch" }]
 license = { text = "GPL-3.0-or-later" }
