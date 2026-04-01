@@ -1,30 +1,32 @@
-[tool.poetry]
+[project]
 name = "pytheriak"
 version = "1.1.1"
 description = "Python wrapper functions for Theriak-Domino."
-authors = ["Philip Hartmeier <philip.hartmeier@hotmail.com>"]
-license = "GPL-3.0-or-later"
+authors = [{ name = "Philip Hartmeier", email = "philip.hartmeier@unil.ch" }]
+license = { text = "GPL-3.0-or-later" }
 readme = "README.md"
-packages = [{ include = "pytheriak", from = "src" },]
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=1.23",
+    "h5py>=3.10.0",
+]
 classifiers = [
-    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
     "Development Status :: 5 - Production/Stable",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-    "Topic :: Scientific/Engineering"
+    "Topic :: Scientific/Engineering",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-numpy = "^1.23"
-h5py = "^3.10.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
+[project.urls]
+Repository = "https://github.com/Theriak-Domino/pytheriak"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pytheriak"]
