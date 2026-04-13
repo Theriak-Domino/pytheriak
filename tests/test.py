@@ -1,4 +1,5 @@
 import unittest
+import tempfile
 from pytheriak import wrapper, hdfwriter
 from pytheriak.wrapper import Rock
 import h5py
@@ -175,6 +176,7 @@ class TestRock(unittest.TestCase):
 
 
 class TestTherCaller(unittest.TestCase):
+
     def test_TherCaller(self):
         """
         To run this test a  theriak.ini (on Windows) and the correct database must be place in the projects folder.
@@ -216,6 +218,237 @@ class TestTherCaller(unittest.TestCase):
 
     #     assert type(fail_string) == str, "failed minimisation not detected"
     #     assert rock.g_system == bm_g_system
+
+
+class TestTherCallerModFixedPhases(unittest.TestCase):
+    def test_append_fixed_phases(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            source_database = tmpdir_path / "database.txt"
+            source_database.write_text(
+                "header\n"
+                "***** FIXED PHASES *****\n"
+                "0    Garnet_seed    GARNET    pyrope(0.01) almandine(0.50) grossular(0.30) spessartine(0.19)\n",
+                encoding="utf-8",
+            )
+
+            theriak = wrapper.TherCaller(programs_dir=Path.home() / "TheriakDominoMAC" / "Programs",
+                                         database=source_database,
+                                         theriak_version="v2023.06.11",
+                                         verbose=True)
+
+            updated_database = theriak.append_fixed_phases(
+                names=["Garnet_core", "Garnet_rim"],
+                solnam_list=["GARNET", "GARNET"],
+                em_frac_list=[
+                    "pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)",
+                    "pyrope(0.05) almandine(0.45) grossular(0.30) spessartine(0.20)",
+                ],
+            )
+
+            assert updated_database.exists()
+            assert theriak.database == str(updated_database)
+            assert updated_database.read_text(encoding="utf-8") == (
+                "header\n"
+                "***** FIXED PHASES *****\n"
+                "0    Garnet_seed    GARNET    pyrope(0.01) almandine(0.50) grossular(0.30) spessartine(0.19)\n"
+                "0    Garnet_core    GARNET    pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)\n"
+                "0    Garnet_rim    GARNET    pyrope(0.05) almandine(0.45) grossular(0.30) spessartine(0.20)\n"
+            )
+            assert source_database.read_text(encoding="utf-8") == (
+                "header\n"
+                "***** FIXED PHASES *****\n"
+                "0    Garnet_seed    GARNET    pyrope(0.01) almandine(0.50) grossular(0.30) spessartine(0.19)\n"
+            )
+
+    def test_overwrite_fixed_phases_replaces_existing_entries(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            source_database = tmpdir_path / "database.txt"
+            source_database.write_text(
+                "header\n"
+                "***** FIXED PHASES *****\n"
+                "0    Garnet_seed    GARNET    pyrope(0.01) almandine(0.50) grossular(0.30) spessartine(0.19)\n"
+                "1    Clinopyroxene_seed    Cpx    jd(0.20) di(0.80)\n",
+                encoding="utf-8",
+            )
+
+            theriak = wrapper.TherCaller(programs_dir=Path.home() / "TheriakDominoMAC" / "Programs",
+                                         database=source_database,
+                                         theriak_version="v2023.06.11",
+                                         verbose=True)
+
+            updated_database = theriak.overwrite_fixed_phases(
+                names=["Garnet_core"],
+                solnam_list=["GARNET"],
+                em_frac_list=["pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)"],
+            )
+
+            assert updated_database.exists()
+            assert theriak.database == str(updated_database)
+            assert updated_database.read_text(encoding="utf-8") == (
+                "header\n"
+                "***** FIXED PHASES *****\n"
+                "0    Garnet_core    GARNET    pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)\n"
+            )
+
+    def test_overwrite_fixed_phases_creates_updated_copy_from_original(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            source_database = tmpdir_path / "database.txt"
+            source_database.write_text(
+                "header\n"
+                "footer\n",
+                encoding="utf-8",
+            )
+
+            theriak = wrapper.TherCaller(programs_dir=Path.home() / "TheriakDominoMAC" / "Programs",
+                                         database=source_database,
+                                         theriak_version="v2023.06.11",
+                                         verbose=True)
+
+            updated_database = theriak.overwrite_fixed_phases(
+                names=["Garnet_core"],
+                solnam_list=["GARNET"],
+                em_frac_list=["pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)"],
+            )
+
+            expected_updated_database = tmpdir_path / "database_updated.txt"
+
+            assert updated_database == expected_updated_database
+            assert updated_database.exists()
+            assert theriak.database == str(updated_database)
+            assert source_database.read_text(encoding="utf-8") == "header\nfooter\n"
+            assert updated_database.read_text(encoding="utf-8") == (
+                "header\n"
+                "footer\n"
+                "\n"
+                "***** FIXED PHASES *****\n"
+                "0    Garnet_core    GARNET    pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)\n"
+            )
+
+    def test_overwrite_fixed_phases_reuses_updated_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            source_database = tmpdir_path / "database_updated.txt"
+            source_database.write_text(
+                "header\n"
+                "***** FIXED PHASES *****\n"
+                "0    Garnet_seed    GARNET    pyrope(0.01) almandine(0.50) grossular(0.30) spessartine(0.19)\n",
+                encoding="utf-8",
+            )
+
+            theriak = wrapper.TherCaller(programs_dir=Path.home() / "TheriakDominoMAC" / "Programs",
+                                         database=source_database,
+                                         theriak_version="v2023.06.11",
+                                         verbose=True)
+
+            updated_database = theriak.overwrite_fixed_phases(
+                names=["Garnet_core"],
+                solnam_list=["GARNET"],
+                em_frac_list=["pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)"],
+            )
+
+            assert updated_database == source_database
+            assert theriak.database == str(source_database)
+            assert updated_database.read_text(encoding="utf-8") == (
+                "header\n"
+                "***** FIXED PHASES *****\n"
+                "0    Garnet_core    GARNET    pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)\n"
+            )
+
+    def test_update_fixed_phases_adds_missing_keyword(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            source_database = tmpdir_path / "database.txt"
+            source_database.write_text("header\nfooter\n", encoding="utf-8")
+
+            theriak = wrapper.TherCaller(programs_dir=Path.home() / "TheriakDominoMAC" / "Programs",
+                                         database=source_database,
+                                         theriak_version="v2023.06.11",
+                                         verbose=True)
+
+            updated_database = theriak.update_fixed_phases(
+                names=["Garnet_core"],
+                solnam_list=["GARNET"],
+                em_frac_list=["pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)"],
+            )
+
+            assert updated_database.exists()
+            assert theriak.database == str(updated_database)
+            assert updated_database.read_text(encoding="utf-8") == (
+                "header\n"
+                "footer\n"
+                "\n"
+                "***** FIXED PHASES *****\n"
+                "0    Garnet_core    GARNET    pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)\n"
+            )
+
+    def test_update_fixed_phases_raises_if_not_at_database_end(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            source_database = tmpdir_path / "database.txt"
+            source_database.write_text(
+                "header\n"
+                "***** FIXED PHASES *****\n"
+                "0    Garnet_seed    GARNET    pyrope(0.01) almandine(0.50) grossular(0.30) spessartine(0.19)\n"
+                "this should not be here\n",
+                encoding="utf-8",
+            )
+
+            theriak = wrapper.TherCaller(programs_dir=Path.home() / "TheriakDominoMAC" / "Programs",
+                                         database=source_database,
+                                         theriak_version="v2023.06.11",
+                                         verbose=True)
+
+            with self.assertRaises(ValueError):
+                theriak.update_fixed_phases(
+                    names=["Garnet_core"],
+                    solnam_list=["GARNET"],
+                    em_frac_list=["pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)"],
+                    overwrite=False,
+                )
+
+    def test_minimisation_with_fixed_phases_deltaG(self):
+        """End-to-end test: append fixed phases, run minimisation, and inspect deltaG."""
+        theriak = wrapper.TherCaller(programs_dir=Path.home() / "TheriakDominoMAC" / "Programs",
+                                     database="tc55_for_testing",
+                                     theriak_version="v2023.06.11",
+                                     verbose=True)
+
+        updated_db_path = theriak.append_fixed_phases(
+            names=["Garnet_core", "Garnet_rim"],
+            solnam_list=["GARNET", "GARNET"],
+            em_frac_list=[
+                "pyrope(0.03) almandine(0.40) grossular(0.35) spessartine(0.21)",
+                "pyrope(0.05) almandine(0.45) grossular(0.30) spessartine(0.20)",
+            ],
+            updated_database_name="tc55_for_testing_with_fp",
+        )
+
+        # Register cleanup to run after test completes
+        self.addCleanup(lambda: updated_db_path.unlink(missing_ok=True))
+
+        rock, element_list = theriak.minimisation(
+            pressure=5000,
+            temperature=450,
+            bulk="SI(68.2)TI(0.76)AL(25.18)FE(9.96)MN(0.02)MG(4.36)CA(0.18)NA(0.06)K(7.74)H(100)O(?)",
+        )
+
+        assert "Garnet_core" in rock.mineral_delta_G, "Garnet_core missing in deltaG results."
+        assert "Garnet_rim" in rock.mineral_delta_G, "Garnet_rim missing in deltaG results."
+
+        deltaG_garnet_core = rock.mineral_delta_G["Garnet_core"]
+        deltaG_garnet_rim = rock.mineral_delta_G["Garnet_rim"]
+
+        assert isinstance(deltaG_garnet_core, float)
+        assert isinstance(deltaG_garnet_rim, float)
+
+        bm_deltaG_garnet_core = 7.48631E+03
+        bm_deltaG_garnet_rim = 8.29361E+03
+
+        assert deltaG_garnet_core == bm_deltaG_garnet_core
+        assert deltaG_garnet_rim == bm_deltaG_garnet_rim
 
 
 class TestHDFwriter(unittest.TestCase):
@@ -298,9 +531,6 @@ class TestHDFwriter(unittest.TestCase):
         dG_ST_fst_rock1 = hdf_file[rock_group_names[1]]["delta_G_meta-stable_minerals"][idx_ST_fst_rock1][0]
 
         assert dG_ST_fst_rock1 == BENCHMARK_dG_ST_fst_rock1, "dG of ST_fst in first rock is not correct. Retrieved was the value: " + str(dG_ST_fst_rock1)
-
-
-
 
 
 if __name__ == "__main__":
