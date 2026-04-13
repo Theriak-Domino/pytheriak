@@ -136,11 +136,15 @@ class TherCaller():
             raise FileNotFoundError(f"Database file not found: {source_database}")
 
         if updated_database_name is None:
-            updated_database = source_database.with_name(f"{source_database.stem}_updated{source_database.suffix}")
+            if overwrite and source_database.stem.endswith("_updated"):
+                updated_database = source_database
+            else:
+                updated_database = source_database.with_name(f"{source_database.stem}_updated{source_database.suffix}")
         else:
             updated_database = source_database.with_name(updated_database_name)
 
-        shutil.copy2(source_database, updated_database)
+        if updated_database != source_database:
+            shutil.copy2(source_database, updated_database)
 
         database_lines = updated_database.read_text(encoding="utf-8").splitlines()
         keyword = "***** FIXED PHASES *****"
