@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 import re
 import numpy as np
@@ -98,11 +99,97 @@ class TherCaller():
         """
 
         self.theriak_exe = Path(programs_dir) / "theriak"
-        self.database = database
+        self.database = str(database)
 
         self.theriak_version = theriak_version
 
         self.verbose_mode = verbose
+
+    def update_fixed_phases(self, names: list[str], solnam_list: list[str], em_frac_list: list[str],
+                            overwrite: bool = False, updated_database_name: str | None = None):
+        """Add fixed phases to a modified copy of the database and update ``self.database`` to point to it.
+
+                Args:
+            names (list[str]): Labels for fixed compositions (maximum length of 16 characters).
+            solnam_list (list[str]): List of names of the solution used to define the fixed composition phase.
+                                     Corresponds to SOLNAM arg in the theriak documentation.
+            em_frac_list (list[str]): Names of the endmembers and their concentrations.
+                                      Corresponds to EMi(Xi) arg in the theriak documentation.
+            overwrite (bool, optional): If True, replace existing fixed phases. If False, append to them.
+            updated_database_name (str | None, optional): File name for the modified copy. If omitted,
+                "_updated" is appended to the original file stem.
+
+        Returns:
+            Path: Path to the updated database copy.
+        """
+
+        if not (len(names) == len(solnam_list) == len(em_frac_list)):
+            raise ValueError("names, solnam_list, and em_frac_list must have the same length")
+
+        lines_to_add = [
+            f"0    {name}    {phase_name}    {fractions}"
+            for name, phase_name, fractions in zip(names, solnam_list, em_frac_list)
+        ]
+
+        source_database = Path(self.database)
+        if not source_database.exists():
+            raise FileNotFoundError(f"Database file not found: {source_database}")
+
+        if updated_database_name is None:
+            updated_database = source_database.with_name(f"{source_database.stem}_updated{source_database.suffix}")
+        else:
+            updated_database = source_database.with_name(updated_database_name)
+
+        shutil.copy2(source_database, updated_database)
+
+        database_lines = updated_database.read_text(encoding="utf-8").splitlines()
+        keyword = "***** FIXED PHASES *****"
+        keyword_index = next((index for index, line in enumerate(database_lines) if keyword in line), None)
+
+        # If ***** FIXED PHASES ***** is not present, add it at the end of the database
+        if keyword_index is None:
+            if database_lines and database_lines[-1] != "":
+                database_lines.append("")
+            database_lines.append(keyword)
+            keyword_index = len(database_lines) - 1
+
+        tail_lines = database_lines[keyword_index + 1:]
+        invalid_tail_lines = [line for line in tail_lines if line.strip() and not line.startswith(("0", "1"))]
+        if invalid_tail_lines:
+            raise ValueError("Fixed phases are not located at the end of the database")
+
+        existing_fixed_lines = [line for line in tail_lines if line.startswith(("0", "1"))]
+
+       # Either append or overwrite fixed phases
+        if overwrite:
+            if existing_fixed_lines and self.verbose_mode:
+                print("WARNING: Overwriting existing fixed phases in database copy.")
+            database_lines = database_lines[:keyword_index + 1]
+            insertion_index = keyword_index + 1
+        else:
+            insertion_index = len(database_lines)
+
+        database_lines[insertion_index:insertion_index] = [str(line) for line in lines_to_add]
+        updated_database.write_text("\n".join(database_lines) + "\n", encoding="utf-8")
+
+        self.database = str(updated_database)
+        return updated_database
+
+    def append_fixed_phases(self, names: list[str], solnam_list: list[str], em_frac_list: list[str],
+                            updated_database_name: str | None = None):
+        return self.update_fixed_phases(names=names,
+                                        solnam_list=solnam_list,
+                                        em_frac_list=em_frac_list,
+                                        overwrite=False,
+                                        updated_database_name=updated_database_name)
+
+    def overwrite_fixed_phases(self, names: list[str], solnam_list: list[str], em_frac_list: list[str],
+                               updated_database_name: str | None = None):
+        return self.update_fixed_phases(names=names,
+                                        solnam_list=solnam_list,
+                                        em_frac_list=em_frac_list,
+                                        overwrite=True,
+                                        updated_database_name=updated_database_name)
 
     def call_theriak(self, pressure: int, temperature: int, bulk: str):
         """Execute theriak.exe and returns the OUT as string.
